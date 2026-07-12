@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg,#ccccff);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: #efebf8;
+            border-radius: 70px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .role-selection {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .role-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .role-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .profile-section {
+            text-align: center;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .profile-section.show {
+            display: block;
+        }
+
+        .profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4facfe 0%, #8b5cf6 100%);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            border: 3px solid #4facfe;
+        }
+
+        .profile-pic:hover {
+            transform: scale(1.05);
+        }
+
+        .profile-pic img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .profile-pic-icon {
+            font-size: 40px;
+            color: white;
+        }
+
+        .profile-pic.has-image img {
+            display: block;
+        }
+
+        .profile-pic.has-image .profile-pic-icon {
+            display: none;
+        }
+
+        .upload-label {
+            font-size: 12px;
+            color: #4facfe;
+            margin-top: 8px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        #profileInput {
+            display: none;
+        }
+
+        #loginForm {
+            display: none;
+        }
+
+        #loginForm.show {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #999;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .info-text {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .profile-pic {
+                width: 80px;
+                height: 80px;
+            }
+
+            .profile-pic-icon {
+                font-size: 32px;
+            }
+
+            .role-btn {
+                font-size: 14px;
+                padding: 12px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="header">
+            <h1>Attendance System</h1>
+            <p id="headerSubtitle">Select your role to login</p>
+        </div>
+
+        <!-- Role Selection -->
+        <div class="role-selection" id="roleSelection">
+            <button type="button" class="role-btn" onclick="selectRole('student')">
+                📚 Student
+            </button>
+            <button type="button" class="role-btn" onclick="selectRole('teacher')">
+                👨‍🏫 Teacher
+            </button>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <!-- Profile Section -->
+            <div class="profile-section" id="profileSection">
+                <div class="profile-pic" id="profilePic">
+                    <span class="profile-pic-icon">👤</span>
+                </div>
+                <label for="profileInput" class="upload-label">Upload Photo</label>
+                <input type="file" id="profileInput" accept="image/*">
+            </div>
+
+            <!-- Name Input -->
+            <div class="form-group">
+                <label for="name" id="nameLabel">Student Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    placeholder="Enter your full name" 
+                    required
+                >
+            </div>
+
+            <!-- Register/ID Number Input -->
+            <div class="form-group" id="identifierGroup">
+                <label for="identifier" id="identifierLabel">Register Number</label>
+                <input 
+                    type="text" 
+                    id="identifier" 
+                    placeholder="Enter your registration number"
+                >
+            </div>
+
+            <!-- Email Input (teacher only) -->
+            <div class="form-group" id="emailGroup" style="display:none;">
+                <label for="emailInput">Email</label>
+                <input 
+                    type="email" 
+                    id="emailInput" 
+                    placeholder="Enter your email"
+                >
+            </div>
+
+            <!-- Password Input (teacher only) -->
+            <div class="form-group" id="passwordGroup" style="display:none;">
+                <label for="passwordInput">Password</label>
+                <div style="position:relative;">
+                    <input 
+                        type="password" 
+                        id="passwordInput" 
+                        placeholder="Enter your password"
+                        style="padding-right:44px;"
+                    >
+                    <button type="button" id="togglePassword" onclick="togglePasswordVisibility()" style="
+                        position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                        background:none; border:none; cursor:pointer; color:#667eea;
+                        font-size:18px; padding:0; display:flex; align-items:center;
+                    " title="Show/Hide password">👁️</button>
+                </div>
+            </div>
+
+            <!-- Login Button -->
+            <button type="submit" class="login-button">Login</button>
+        </form>
+
+        <p class="info-text" id="infoText">Your credentials are securely stored</p>
+        <!-- registration link -->
+        <p class="info-text" id="registerPrompt">
+            Don't have an account? <a href="#" id="registerLink">Register here</a>
+        </p>
+    </div>
+
+    <script>
+        // ── Auto-redirect if already logged in ──────────────────────────────
+        (function checkExistingSession() {
+            const student = localStorage.getItem('studentData');
+            const teacher = localStorage.getItem('teacherData');
+            if (student) { window.location.replace('page3.html'); return; }
+            if (teacher) { window.location.replace('teachpage1.html'); return; }
+        })();
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('passwordInput');
+            const btn = document.getElementById('togglePassword');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
+        let selectedRole = null;
+
+        // Select role
+        function selectRole(role) {
+            selectedRole = role;
+
+            // Update button styles
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update labels and placeholders
+            const isStudent = role === 'student';
+            document.getElementById('headerSubtitle').textContent = 
+                isStudent ? 'Student Login' : 'Teacher Login';
+            document.getElementById('nameLabel').textContent = 
+                isStudent ? 'Student Name' : 'Teacher Name';
+
+            // Toggle student vs teacher fields
+            if (isStudent) {
+                document.getElementById('identifierGroup').style.display = 'block';
+                document.getElementById('identifierLabel').textContent = 'Register Number';
+                document.getElementById('identifier').placeholder = 'Enter your registration number';
+                document.getElementById('identifier').required = true;
+                document.getElementById('emailGroup').style.display = 'none';
+                document.getElementById('emailInput').required = false;
+                document.getElementById('passwordGroup').style.display = 'none';
+                document.getElementById('passwordInput').required = false;
+                document.getElementById('name').placeholder = 'Enter your full name';
+            } else {
+                document.getElementById('identifierGroup').style.display = 'none';
+                document.getElementById('identifier').required = false;
+                document.getElementById('emailGroup').style.display = 'block';
+                document.getElementById('emailInput').required = true;
+                document.getElementById('passwordGroup').style.display = 'block';
+                document.getElementById('passwordInput').required = true;
+                document.getElementById('name').placeholder = 'Enter your full name';
+            }
+
+            // Show profile section only for students
+            const profileSection = document.getElementById('profileSection');
+            if (isStudent) {
+                profileSection.classList.add('show');
+            } else {
+                profileSection.classList.remove('show');
+            }
+
+            // Show login form
+            document.getElementById('loginForm').classList.add('show');
+            document.getElementById('roleSelection').style.opacity = '0.5';
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+        }
+
+        // Profile image upload handler
+        const profileInput = document.getElementById('profileInput');
+        const profilePic = document.getElementById('profilePic');
+
+        profilePic.addEventListener('click', () => {
+            profileInput.click();
+        });
+
+        profileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    profilePic.classList.add('has-image');
+                    let img = profilePic.querySelector('img');
+                    if (!img) {
+                        img = document.createElement('img');
+                        profilePic.appendChild(img);
+                    }
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // registration link handler (content to be defined by user)
+        document.getElementById('registerLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            // navigate to registration page
+            window.location.href = 'registeration.html';
+        });
+
+        // Login form handler
+        function handleLogin(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value.trim();
+
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+
+            // Get profile image if exists
+            const profileImage = selectedRole === 'student' ?
+                (profilePic.querySelector('img')?.src || null) : null;
+
+            if (selectedRole === 'student') {
+                const identifier = document.getElementById('identifier').value.trim();
+                if (!identifier) {
+                    alert('Please enter your register number');
+                    return;
+                }
+                // Backend validation for student
+                fetch('http://127.0.0.1:5000/student_login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, reg_number: identifier })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const loginData = {
+                            role: selectedRole,
+                            name: data.student.name,
+                            identifier: data.student.reg_number,
+                            registerNumber: data.student.reg_number,
+                            department: data.student.department,
+                            year: data.student.year,
+                            loginTime: new Date().toISOString(),
+                            profileImage: profileImage
+                        };
+                        localStorage.setItem('userData', JSON.stringify(loginData));
+                        localStorage.setItem('studentData', JSON.stringify(loginData)); 
+                        
+                        setTimeout(() => {
+                            window.location.href = 'page3.html';
+                        }, 500);
+                    } else {
+                        alert(data.message || 'Login failed. Are you registered?');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error logging in:', err);
+                    alert('Backend error. Is the server running?');
+                });
+            } else {
+                // Teacher login — check shared password then auto-save to DB
+                const TEACHER_PASSWORD = 'Faculty#Login@bcu11';
+                const email    = document.getElementById('emailInput').value.trim();
+                const password = document.getElementById('passwordInput').value.trim();
+
+                if (!email || !password) {
+                    alert('Please enter your email and password');
+                    return;
+                }
+
+                if (password !== TEACHER_PASSWORD) {
+                    alert('Incorrect password. Access denied.');
+                    return;
+                }
+
+                // Password correct — save name+email to teachers table and grant access
+                fetch('http://127.0.0.1:5000/teacher_login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const loginData = {
+                            role: 'teacher',
+                            name: data.teacher.name,
+                            email: data.teacher.email,
+                            identifier: data.teacher.email,
+                            loginTime: new Date().toISOString()
+                        };
+                        localStorage.setItem('userData', JSON.stringify(loginData));
+                        localStorage.setItem('teacherData', JSON.stringify(loginData));
+                        setTimeout(() => { window.location.href = 'teachpage1.html'; }, 300);
+                    } else {
+                        alert('Login error: ' + (data.message || 'Please try again.'));
+                    }
+                })
+                .catch(() => alert('Backend error. Is the server running?'));
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System - Year Promotion</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ccccff);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: #efebf8;
+            border-radius: 70px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            padding: 40px;
+            width: 100%;
+            max-width: 460px;
+        }
+
+        .header { text-align: center; margin-bottom: 28px; }
+        .header h1 { color: #333; font-size: 24px; margin-bottom: 6px; }
+        .header p  { color: #666; font-size: 14px; }
+
+        /* ── Step indicator ── */
+        .steps {
+            display: flex; align-items: center;
+            justify-content: center; margin-bottom: 8px;
+        }
+        .step-dot {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: #e0e0e0; color: #999;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700;
+            transition: all 0.35s ease;
+        }
+        .step-dot.active { background: linear-gradient(135deg,#667eea,#764ba2); color: white; box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .step-dot.done   { background: #22c55e; color: white; }
+        .step-line {
+            flex: 1; height: 3px; background: #e0e0e0;
+            max-width: 70px; transition: background 0.35s;
+        }
+        .step-line.done { background: #22c55e; }
+
+        .step-labels {
+            display: flex; justify-content: space-between;
+            margin-bottom: 26px; padding: 0 4px;
+        }
+        .step-label {
+            font-size: 11px; font-weight: 600; color: #bbb;
+            text-align: center; width: 80px; transition: color 0.3s;
+        }
+        .step-label.active { color: #667eea; }
+        .step-label.done   { color: #22c55e; }
+
+        /* ── Form ── */
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; color: #333; font-weight: 600;
+            margin-bottom: 8px; font-size: 14px;
+        }
+        .form-group input {
+            width: 100%; padding: 12px;
+            border: 2px solid #e0e0e0; border-radius: 8px;
+            font-size: 14px; transition: border-color 0.3s;
+            font-family: inherit; background: white;
+        }
+        .form-group input:focus {
+            outline: none; border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102,126,234,0.15);
+        }
+        .form-group input::placeholder { color: #999; }
+
+        /* ── Promotion banner ── */
+        .promo-banner {
+            background: rgba(102,126,234,0.1);
+            border: 2px solid rgba(102,126,234,0.25);
+            border-radius: 12px; padding: 16px 20px;
+            margin-bottom: 22px; text-align: center;
+        }
+        .year-flow {
+            display: flex; align-items: center;
+            justify-content: center; gap: 14px;
+            font-size: 18px; font-weight: 700;
+        }
+        .year-from { color: #764ba2; }
+        .year-arrow { color: #667eea; font-size: 22px; }
+        .year-to   { color: #16a34a; }
+        .promo-banner p { font-size: 13px; color: #555; margin-top: 8px; }
+
+        /* ── Subject grid ── */
+        .subjects-grid {
+            display: grid; grid-template-columns: repeat(2,1fr);
+            gap: 12px; margin-top: 10px;
+        }
+        .subject-card {
+            display: block; background: white;
+            border: 2px solid #e0e0e0; border-radius: 8px;
+            padding: 12px; text-align: center; cursor: pointer;
+            transition: all 0.25s; color: #555; font-weight: 500;
+            user-select: none; position: relative; font-size: 13px;
+        }
+        .subject-card input[type="checkbox"] { display: none; }
+        .subject-card:hover { border-color: #667eea; box-shadow: 0 4px 10px rgba(102,126,234,0.12); }
+        .subject-card.selected { border-color: #4CAF50; background: #f2fcf5; color: #2e7d32; }
+        .tick-mark {
+            position: absolute; top: -6px; right: -6px;
+            background: #4CAF50; color: white;
+            width: 20px; height: 20px; border-radius: 50%;
+            font-size: 12px; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transform: scale(0); transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .subject-card.selected .tick-mark { opacity: 1; transform: scale(1); }
+
+        /* ── Buttons ── */
+        .btn-primary {
+            width: 100%; padding: 13px;
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: white; border: none; border-radius: 8px;
+            font-size: 15px; font-weight: 600; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px; font-family: inherit;
+        }
+        .btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { background: #d1d5db; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-secondary {
+            width: 100%; padding: 11px;
+            background: transparent; color: #667eea;
+            border: 2px solid #667eea; border-radius: 8px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; margin-top: 10px; font-family: inherit;
+        }
+        .btn-secondary:hover { background: rgba(102,126,234,0.07); }
+
+        /* ── Success screen ── */
+        .success-screen { text-align: center; padding: 10px 0; }
+        .success-icon { font-size: 72px; margin-bottom: 16px; animation: bounceIn 0.5s ease; }
+        @keyframes bounceIn {
+            0%   { transform: scale(0); }
+            60%  { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .success-screen h2 { color: #16a34a; font-size: 22px; margin-bottom: 10px; }
+        .success-screen p  { color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+        .year-badge {
+            display: inline-block;
+            background: linear-gradient(135deg,#22c55e,#16a34a);
+            color: white; padding: 6px 22px;
+            border-radius: 20px; font-weight: 700;
+            font-size: 15px; margin-bottom: 20px;
+        }
+
+        .info-text { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+        .info-text a { color: #667eea; text-decoration: none; font-weight: 600; }
+        .info-text a:hover { text-decoration: underline; }
+
+        .step-panel { display: none; }
+        .step-panel.active { display: block; }
+
+        @media (max-width: 600px) {
+            .container { padding: 30px 20px; border-radius: 40px; }
+            .header h1 { font-size: 20px; }
+            .subjects-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎓 Year Promotion</h1>
+        <p>Advance to the next academic year</p>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="steps">
+        <div class="step-dot active" id="dot1">1</div>
+        <div class="step-line"      id="line1"></div>
+        <div class="step-dot"       id="dot2">2</div>
+        <div class="step-line"      id="line2"></div>
+        <div class="step-dot"       id="dot3">3</div>
+    </div>
+    <div class="step-labels">
+        <span class="step-label active" id="label1">Verify</span>
+        <span class="step-label"        id="label2">Subjects</span>
+        <span class="step-label"        id="label3">Done</span>
+    </div>
+
+    <!-- ── Disabled screen (shown when teacher has not enabled promotion) ── -->
+    <div id="disabledScreen" style="display:none;text-align:center;padding:10px 0;">
+        <div style="font-size:54px;margin-bottom:14px;">🔒</div>
+        <h2 style="color:#e65100;font-size:19px;margin-bottom:10px;">Promotion Not Available</h2>
+        <p style="color:#555;font-size:14px;margin-bottom:6px;">Year promotion is currently <strong>disabled</strong> by your teacher.</p>
+        <p style="color:#888;font-size:13px;margin-bottom:24px;">Please contact your teacher to enable it when you are ready to be promoted.</p>
+        <a href="page1.html" style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">← Back to Login</a>
+    </div>
+
+    <!-- ── Step 1: Verify ── -->
+    <div class="step-panel active" id="step1">
+        <div class="form-group">
+            <label for="stuName">Your Full Name</label>
+            <input type="text" id="stuName" placeholder="Enter your full name" required>
+        </div>
+        <div class="form-group">
+            <label for="stuReg">Register Number</label>
+            <input type="text" id="stuReg" placeholder="Enter your register number" required>
+        </div>
+        <button class="btn-primary" id="verifyBtn" onclick="verifyIdentity()">Verify &amp; Continue →</button>
+        <p class="info-text">
+            Not registered yet? <a href="registeration.html">Register here</a><br>
+            <a href="page1.html">← Back to Login</a>
+        </p>
+    </div>
+
+    <!-- ── Step 2: Subjects ── -->
+    <div class="step-panel" id="step2">
+        <div class="promo-banner">
+            <div class="year-flow">
+                <span class="year-from" id="fromYear">1st Year</span>
+                <span class="year-arrow">→</span>
+                <span class="year-to"   id="toYear">2nd Year</span>
+            </div>
+            <p>Select your subjects for the new year</p>
+        </div>
+        <div class="form-group">
+            <label>Select Subjects for Next Year</label>
+            <div class="subjects-grid" id="subjectsContainer"></div>
+        </div>
+        <button class="btn-primary"   id="confirmBtn" onclick="confirmPromotion()">✅ Confirm Promotion</button>
+        <button class="btn-secondary" onclick="showStep(1)">← Go Back</button>
+    </div>
+
+    <!-- ── Step 3: Success ── -->
+    <div class="step-panel" id="step3">
+        <div class="success-screen">
+            <div class="success-icon">🎉</div>
+            <div class="year-badge" id="successBadge">2nd Year</div>
+            <h2>Promotion Successful!</h2>
+            <p>
+                You have been successfully promoted.<br>
+                Please log in again to access your new year's attendance dashboard.
+            </p>
+            <button class="btn-primary" onclick="window.location.href='page1.html'">🔑 Go to Login</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let verifiedStudent = null; // { id, name, reg_number, current_year, next_year }
+
+    // ── Check promotion status on load ───────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', async () => {
+        // Briefly show a checking state
+        document.getElementById('step1').style.display = 'none';
+        document.getElementById('disabledScreen').style.display = 'none';
+        try {
+            const res  = await fetch('http://127.0.0.1:5000/promotion_status');
+            const data = await res.json();
+            if (!data.enabled) {
+                // Hide step indicator + show locked screen
+                document.querySelector('.steps').style.display = 'none';
+                document.querySelector('.step-labels').style.display = 'none';
+                document.getElementById('disabledScreen').style.display = 'block';
+                return;
+            }
+        } catch(e) {
+            // If backend is unreachable, still show the form (server will re-validate)
+        }
+        document.getElementById('step1').style.display = 'block';
+    });
+
+    // ── Step navigation ──────────────────────────────────────────────────────
+    function showStep(n) {
+        [1, 2, 3].forEach(i => {
+            document.getElementById('step'  + i).classList.toggle('active', i === n);
+            const dot   = document.getElementById('dot'   + i);
+            const label = document.getElementById('label' + i);
+            dot.classList.remove('active', 'done');
+            label.classList.remove('active', 'done');
+            if      (i < n)  { dot.classList.add('done');   label.classList.add('done');   }
+            else if (i === n){ dot.classList.add('active'); label.classList.add('active'); }
+        });
+        document.getElementById('line1').classList.toggle('done', n > 1);
+        document.getElementById('line2').classList.toggle('done', n > 2);
+    }
+
+    function cap(str) {
+        return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+    }
+
+    // ── Step 1: Verify identity ──────────────────────────────────────────────
+    async function verifyIdentity() {
+        const name = document.getElementById('stuName').value.trim();
+        const reg  = document.getElementById('stuReg').value.trim();
+
+        if (!name || !reg) { alert('Please fill in your name and register number.'); return; }
+
+        const btn = document.getElementById('verifyBtn');
+        btn.disabled = true;
+        btn.textContent = 'Verifying...';
+
+        try {
+            const res  = await fetch('http://127.0.0.1:5000/verify_promotion', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ name, reg_number: reg })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                verifiedStudent = data.student;
+                document.getElementById('fromYear').textContent = cap(verifiedStudent.current_year);
+                document.getElementById('toYear').textContent   = cap(verifiedStudent.next_year);
+                await loadSubjects();
+                showStep(2);
+            } else {
+                alert('❌ ' + (data.message || 'Verification failed. Please check your details.'));
+            }
+        } catch (err) {
+            alert('⚠️ Could not connect to the backend. Is the server running on port 5000?');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Verify & Continue →';
+        }
+    }
+
+    // ── Step 2: Load subjects ────────────────────────────────────────────────
+    async function loadSubjects() {
+        const container = document.getElementById('subjectsContainer');
+        container.innerHTML = '<p style="color:#999;font-size:13px;text-align:center;grid-column:1/-1;">Loading subjects...</p>';
+        try {
+            const res      = await fetch('http://127.0.0.1:5000/get_subjects');
+            const subjects = await res.json();
+            container.innerHTML = '';
+
+            if (!subjects || subjects.length === 0) {
+                container.innerHTML = '<p style="color:#e65100;font-size:13px;grid-column:1/-1;">No subjects found. Please contact your teacher.</p>';
+                return;
+            }
+
+            subjects.forEach(sub => {
+                const label = document.createElement('label');
+                label.className = 'subject-card';
+                label.innerHTML = `
+                    <input type="checkbox" name="subject" value="${sub.id}"
+                        onchange="this.parentElement.classList.toggle('selected',this.checked)">
+                    ${sub.subject_name}
+                    <div class="tick-mark">✓</div>`;
+                container.appendChild(label);
+            });
+        } catch (err) {
+            container.innerHTML = '<p style="color:#e65100;font-size:13px;grid-column:1/-1;">Could not load subjects. Is the backend running?</p>';
+        }
+    }
+
+    // ── Step 2: Confirm promotion ────────────────────────────────────────────
+    async function confirmPromotion() {
+        const selected = Array.from(document.querySelectorAll('input[name="subject"]:checked'))
+                              .map(i => Number(i.value));
+
+        if (selected.length === 0) { alert('Please select at least one subject for your new year.'); return; }
+        if (!verifiedStudent)       { alert('Session expired. Please verify again.'); showStep(1); return; }
+
+        const btn = document.getElementById('confirmBtn');
+        btn.disabled = true;
+        btn.textContent = 'Processing...';
+
+        try {
+            const res  = await fetch('http://127.0.0.1:5000/promote_student', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ student_id: verifiedStudent.id, new_subjects: selected })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('successBadge').textContent = cap(verifiedStudent.next_year);
+                // Clear old session so page1 doesn't auto-redirect with stale year
+                localStorage.removeItem('studentData');
+                localStorage.removeItem('userData');
+                showStep(3);
+            } else {
+                alert('❌ ' + (data.message || 'Promotion failed. Please try again.'));
+            }
+        } catch (err) {
+            alert('⚠️ Could not connect to the backend. Is the server running?');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '✅ Confirm Promotion';
+        }
+    }
+</script>
+</body>
+</html>

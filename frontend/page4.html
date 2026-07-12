@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semester Attendance - Student Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg,#ccccff);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h2 {
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .navbar a {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: transform 0.2s ease;
+        }
+
+        .navbar a:hover {
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .page-header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .student-details {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            font-size: 14px;
+        }
+
+        .student-details span {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .student-details .label {
+            color: #666;
+            margin-right: 5px;
+        }
+
+        .semester-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .semester-header {
+            background: linear-gradient(135deg,#667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .semester-header h2 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .semester-header .semester-icon {
+            font-size: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .subject-name {
+            font-weight: 600;
+            color: #4facfe;
+        }
+
+        .total-classes {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .classes-attended {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .percentage-cell {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .percentage-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .percentage-high {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .percentage-medium {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .percentage-low {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .semester-footer {
+            background: #f8f9fa;
+            padding: 15px;
+            border-top: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .footer-stat {
+            text-align: center;
+        }
+
+        .footer-stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .footer-stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .no-data {
+            padding: 30px;
+            text-align: center;
+            color: #999;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .calendar-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .calendar-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .calendar-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .calendar-modal.show {
+            display: block;
+        }
+
+        .calendar-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .calendar-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s ease;
+        }
+
+        .calendar-close:hover {
+            color: #333;
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-nav button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-nav button:hover {
+            background: #764ba2;
+        }
+
+        .calendar-month {
+            color: #333;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+            padding: 10px 5px;
+            font-size: 12px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-day.present {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-color: #2e7d32;
+        }
+
+        .calendar-day.absent {
+            background: #ffebee;
+            color: #c62828;
+            border-color: #c62828;
+        }
+
+        .calendar-day.no-class {
+            background: #f8f9fa;
+            color: #999;
+            cursor: default;
+        }
+
+        .calendar-legend {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .legend-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 2px solid;
+        }
+
+        @media (max-width: 1100px) {
+            .semester-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 22px;
+            }
+
+            .semester-header h2 {
+                font-size: 16px;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            .semester-footer {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>📋 Semester Attendance Summary</h2>
+        <div class="navbar-links">
+            <a href="page3.html">← Back</a>
+            <a href="page2.html">Profile</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Semester-wise Attendance Report</h1>
+            <p>Detailed breakdown of your attendance across semesters</p>
+            <div class="student-details">
+                <span class="label">Student:</span>
+                <span id="studentName">Loading...</span>
+                <span style="margin: 0 15px;">|</span>
+                <span class="label">Register:</span>
+                <span id="studentReg">---</span>
+            </div>
+        </div>
+
+        <div id="loadingMessage" style="background:white;padding:30px;border-radius:10px;text-align:center;box-shadow:0 5px 20px rgba(0,0,0,0.1);margin-bottom:20px;display:none;">
+            <div style="font-size:30px;margin-bottom:10px;">⏳</div>
+            <p style="color:#666;">Loading attendance data...</p>
+        </div>
+        <div id="errorMessage" style="background:white;padding:30px;border-radius:10px;text-align:center;box-shadow:0 5px 20px rgba(0,0,0,0.1);margin-bottom:20px;display:none;">
+            <div style="font-size:30px;margin-bottom:10px;">⚠️</div>
+            <p style="color:#e65100;font-weight:600;" id="errorText">Could not load attendance data.</p>
+            <p style="color:#666;font-size:13px;margin-top:8px;">Please make sure the backend server is running on port 5000 and try again.</p>
+            <button onclick="fetchSemesterData()" style="margin-top:15px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:10px 24px;border-radius:5px;font-weight:600;cursor:pointer;">🔄 Retry</button>
+        </div>
+        <!-- No subjects enrolled panel -->
+        <div id="noSubjectsMessage" style="display:none;background:white;border-radius:14px;padding:40px 30px;text-align:center;box-shadow:0 8px 32px rgba(102,126,234,0.13);margin-bottom:20px;border:2px solid #e0e0f5;">
+            <div style="font-size:52px;margin-bottom:14px;">📋</div>
+            <h2 style="color:#333;font-size:20px;margin-bottom:10px;">No Attendance Records Yet</h2>
+            <p style="color:#555;font-size:14px;margin-bottom:6px;">No attendance has been marked for your enrolled subjects yet.</p>
+            <p style="color:#888;font-size:12px;margin-bottom:22px;">Records will appear here once your teacher marks attendance.</p>
+            <a href="page3.html" style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-decoration:none;padding:11px 26px;border-radius:8px;font-weight:700;font-size:14px;">← Back to Dashboard</a>
+        </div>
+        <!-- Not-enrolled guard panel -->
+        <div id="notEnrolledMessage" style="display:none;background:white;border-radius:14px;padding:40px 30px;text-align:center;box-shadow:0 8px 32px rgba(102,126,234,0.13);margin-bottom:20px;border:2px solid #ffb74d;">
+            <div style="font-size:56px;margin-bottom:16px;">🔒</div>
+            <h2 style="color:#e65100;font-size:22px;margin-bottom:10px;">Access Restricted</h2>
+            <p style="color:#555;font-size:15px;margin-bottom:8px;">You have <strong>not enrolled</strong> in this academic year.</p>
+            <p style="color:#888;font-size:13px;margin-bottom:24px;">Only your enrolled year's attendance records are available to you.</p>
+            <a href="page3.html" style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;transition:transform 0.2s;">← Back to My Dashboard</a>
+        </div>
+        <!-- History mode banner -->
+        <div id="historyBanner" style="display:none;background:linear-gradient(135deg,#e0f4ff,#cce8ff);border:2px solid #4facfe;border-radius:14px;padding:18px 24px;margin-bottom:20px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:28px;">📜</span>
+                <div>
+                    <div style="font-weight:700;color:#0c3557;font-size:15px;">History Mode</div>
+                    <div style="font-size:13px;color:#1a6080;margin-top:2px;">Viewing your attendance records from a previous academic year. These are read-only.</div>
+                </div>
+                <a href="page3.html" style="margin-left:auto;background:linear-gradient(135deg,#4facfe,#00c6ff);color:white;text-decoration:none;padding:8px 18px;border-radius:8px;font-weight:700;font-size:13px;white-space:nowrap;">← Dashboard</a>
+            </div>
+        </div>
+        <!-- No history available panel -->
+        <div id="noHistoryMessage" style="display:none;background:white;border-radius:14px;padding:40px 30px;text-align:center;box-shadow:0 8px 32px rgba(102,126,234,0.13);margin-bottom:20px;border:2px solid #b3d9ff;">
+            <div style="font-size:52px;margin-bottom:14px;">📂</div>
+            <h2 style="color:#1a6080;font-size:20px;margin-bottom:10px;">No Previous Year Records Found</h2>
+            <p style="color:#555;font-size:14px;margin-bottom:6px;">Your attendance history from previous years will appear here after your next promotion.</p>
+            <p style="color:#888;font-size:12px;margin-bottom:22px;">History is captured automatically when you use the <strong>Promote Year</strong> feature.</p>
+            <a href="page3.html" style="display:inline-block;background:linear-gradient(135deg,#4facfe,#00c6ff);color:white;text-decoration:none;padding:11px 26px;border-radius:8px;font-weight:700;font-size:14px;">← Back to Dashboard</a>
+        </div>
+        <div id="semesterContainer" class="semester-container">
+            <!-- Semester cards will be rendered here dynamically -->
+        </div>
+
+        <div class="download-section">
+            <button class="back-btn" onclick="window.history.back()">← Back</button>
+        </div>
+    </div>
+
+    <div class="calendar-modal" id="calendarModal">
+        <div class="calendar-content">
+            <div class="calendar-header">
+                <h2 id="calendarTitle">Attendance Calendar</h2>
+                <button class="calendar-close" onclick="closeCalendar()">×</button>
+            </div>
+            <div class="calendar-nav">
+                <button onclick="prevMonth()">← Prev</button>
+                <span class="calendar-month" id="currentMonth">January 2026</span>
+                <button onclick="nextMonth()">Next →</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+            </div>
+            <div class="calendar-legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #e8f5e9; border-color: #2e7d32;"></div>
+                    <span>Present</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #ffebee; border-color: #c62828;"></div>
+                    <span>Absent</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #f8f9fa; border-color: #e0e0e0;"></div>
+                    <span>No Class</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMonth = new Date();
+        let calendarData = {};
+
+        async function openCalendar(subjectId, subjectName, classType = 'Theory') {
+            const studentData = JSON.parse(localStorage.getItem('studentData')) || {};
+            const regNum = studentData.registerNumber || studentData.identifier || '';
+
+            if (regNum) {
+                const response = await fetch(`http://127.0.0.1:5000/get_student_calendar/${regNum}/${subjectId}?class_type=${encodeURIComponent(classType)}`);
+                calendarData = await response.json();
+            } else {
+                calendarData = {};
+            }
+
+            document.getElementById('calendarTitle').textContent = `${subjectName} - Attendance Calendar`;
+            currentMonth = new Date();
+            renderCalendar();
+            document.getElementById('calendarModal').classList.add('show');
+        }
+
+        function closeCalendar() {
+            document.getElementById('calendarModal').classList.remove('show');
+        }
+
+        function prevMonth() {
+            currentMonth.setMonth(currentMonth.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            document.getElementById('currentMonth').textContent = monthName;
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            daysOfWeek.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-day-header';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'calendar-day no-class';
+                empty.textContent = '';
+                grid.appendChild(empty);
+            }
+
+            for (let date = 1; date <= lastDate; date++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                const status = calendarData[dateStr] || null;
+
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                if (status === 'present') {
+                    dayEl.classList.add('present');
+                    dayEl.textContent = `${date} ✓`;
+                } else if (status === 'absent') {
+                    dayEl.classList.add('absent');
+                    dayEl.textContent = `${date} ✗`;
+                } else {
+                    dayEl.classList.add('no-class');
+                    dayEl.textContent = date;
+                }
+                grid.appendChild(dayEl);
+            }
+        }
+
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('calendarModal');
+            if (event.target === modal) {
+                closeCalendar();
+            }
+        });
+
+        let semesterData = {};
+
+        // Map sems param → year key (must match page3 logic)
+        function semsToYearKey(semsParam) {
+            if (!semsParam) return null;
+            const s = semsParam.trim();
+            if (s === '1,2') return '1st';
+            if (s === '3,4') return '2nd';
+            if (s === '5,6') return '3rd';
+            return null;
+        }
+
+        // Resolve enrolled year from stored data (mirrors page3 logic)
+        function resolveEnrolledKey(raw) {
+            raw = (raw || '').toLowerCase().trim();
+            if (raw.includes('1st') || raw.includes('first') || raw === '1') return '1st';
+            if (raw.includes('2nd') || raw.includes('second') || raw === '2') return '2nd';
+            if (raw.includes('3rd') || raw.includes('third') || raw === '3') return '3rd';
+            return null;
+        }
+
+        async function fetchSemesterData() {
+            const loadingEl      = document.getElementById('loadingMessage');
+            const errorEl        = document.getElementById('errorMessage');
+            const errorText      = document.getElementById('errorText');
+            const notEnrolledEl  = document.getElementById('notEnrolledMessage');
+            const noSubjectsEl   = document.getElementById('noSubjectsMessage');
+            const historyBanner  = document.getElementById('historyBanner');
+            const noHistoryEl    = document.getElementById('noHistoryMessage');
+            const container      = document.getElementById('semesterContainer');
+
+            // Reset all panels
+            loadingEl.style.display     = 'block';
+            errorEl.style.display       = 'none';
+            notEnrolledEl.style.display = 'none';
+            if (noSubjectsEl)  noSubjectsEl.style.display  = 'none';
+            if (historyBanner) historyBanner.style.display = 'none';
+            if (noHistoryEl)   noHistoryEl.style.display   = 'none';
+            container.innerHTML         = '';
+
+            const studentData = JSON.parse(localStorage.getItem('studentData')) || {};
+            const regNum = (studentData.registerNumber || studentData.reg_number || studentData.identifier || '').trim();
+
+            // Get params from URL
+            const urlParams    = new URLSearchParams(window.location.search);
+            const selectedType = urlParams.get('type');    // 'lab' or 'theory'
+            const semsParam    = urlParams.get('sems');    // '1,2' | '3,4' | '5,6'
+            const isHistory    = urlParams.get('history') === 'true';
+
+            if (!regNum) {
+                loadingEl.style.display = 'none';
+                errorEl.style.display   = 'block';
+                errorText.textContent   = 'No student session found. Please login again.';
+                return;
+            }
+
+            // ── Year-access guard (skipped in history mode) ────────────────
+            // Only block if BOTH keys resolve to valid values AND they don't match.
+            // If either is null/unresolved, we let the request through.
+            if (!isHistory) {
+                const requestedYearKey = semsToYearKey(semsParam);
+                const enrolledYearKey  = resolveEnrolledKey(studentData.year);
+                if (requestedYearKey && enrolledYearKey && requestedYearKey !== enrolledYearKey) {
+                    loadingEl.style.display     = 'none';
+                    notEnrolledEl.style.display = 'block';
+                    return;
+                }
+            }
+
+            // Show history banner if in history mode
+            if (isHistory) {
+                historyBanner.style.display = 'block';
+            }
+
+            try {
+                // Use history endpoint for past-year view, normal report otherwise
+                const endpoint = isHistory
+                    ? `http://127.0.0.1:5000/get_student_history/${encodeURIComponent(regNum)}`
+                    : `http://127.0.0.1:5000/get_student_report/${encodeURIComponent(regNum)}`;
+
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                let report = await response.json();
+
+                // Normalise API response into a flat subjects array
+                let allSubjects = [];
+                if (Array.isArray(report)) {
+                    allSubjects = report;
+                } else if (report && Array.isArray(report.subjects)) {
+                    allSubjects = report.subjects;
+                } else if (report && Array.isArray(report['Registered Subjects'])) {
+                    allSubjects = report['Registered Subjects'];
+                }
+
+                // -- Filtering rules ------------------------------------------
+                // Theory -> show ALL subjects (course + language), use theory stats
+                // Lab    -> show ONLY course subjects (no language), use lab stats
+                // ------------------------------------------------------------
+                const isLab = selectedType === 'lab';
+
+                const filteredSubjects = allSubjects
+                    .filter(subject => {
+                        const cat = (subject.category || 'course').toLowerCase();
+                        return isLab ? cat !== 'language' : true;
+                    })
+                    .map(subject => {
+                        const theoryData = subject.theory || { totalClasses: 0, attended: 0, percentage: 0 };
+                        const labData    = subject.lab    || { totalClasses: 0, attended: 0, percentage: 0 };
+                        const stats      = isLab ? labData : theoryData;
+                        return {
+                            subject_id:   subject.subject_id,
+                            subject:      subject.subject,
+                            category:     (subject.category || 'course').toLowerCase(),
+                            totalClasses: stats.totalClasses,
+                            attended:     stats.attended,
+                            percentage:   stats.percentage
+                        };
+                    });
+
+                loadingEl.style.display = 'none';
+
+                // If history mode but no subjects found, show friendly empty state
+                if (isHistory && filteredSubjects.length === 0) {
+                    const noHistEl = document.getElementById('noHistoryMessage');
+                    if (noHistEl) noHistEl.style.display = 'block';
+                    return;
+                }
+
+                // In normal mode with no subjects, show "no records yet" panel
+                if (!isHistory && filteredSubjects.length === 0) {
+                    if (noSubjectsEl) noSubjectsEl.style.display = 'block';
+                    return;
+                }
+
+                semesterData = { 'Registered Subjects': filteredSubjects };
+                loadSemesterData();
+
+            } catch (err) {
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                errorText.textContent = 'Could not connect to the backend server.';
+            }
+        }
+
+        // Get percentage badge class
+        function getPercentageBadgeClass(percentage) {
+            if (percentage >= 85) return 'percentage-high';
+            if (percentage >= 75) return 'percentage-medium';
+            return 'percentage-low';
+        }
+
+        // Load student info
+        function loadStudentInfo() {
+            const studentData = JSON.parse(localStorage.getItem('studentData'));
+            if (studentData) {
+                document.getElementById('studentName').textContent = studentData.name || 'Unknown';
+                document.getElementById('studentReg').textContent = studentData.registerNumber || '---';
+            }
+        }
+
+        // Load semester data dynamically and render cards
+        function loadSemesterData() {
+            // Update page title based on type
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedType = urlParams.get('type');
+            const typeText = selectedType === 'lab' ? 'Lab' : 'Theory';
+            document.querySelector('.page-header h1').textContent = `${typeText} Attendance Report`;
+            document.querySelector('.page-header p').textContent = `Detailed breakdown of your ${typeText.toLowerCase()} attendance across semesters`;
+
+            const container = document.getElementById('semesterContainer');
+            container.innerHTML = '';
+
+            Object.keys(semesterData).forEach(sem => {
+                const data = semesterData[sem] || [];
+
+                const card = document.createElement('div');
+                card.className = 'semester-card';
+
+                const header = document.createElement('div');
+                header.className = 'semester-header';
+                header.innerHTML = `<span class="semester-icon">📘</span><h2>${sem}</h2>`;
+                card.appendChild(header);
+
+                const safeId = sem.replace(/\s+/g, '');
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Total Classes</th>
+                            <th>Attended</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sem${safeId}Body">
+                    </tbody>
+                `;
+
+                card.appendChild(table);
+
+                const footer = document.createElement('div');
+                footer.className = 'semester-footer';
+                footer.innerHTML = `
+                    <div class="footer-stat">
+                        <div class="footer-stat-label">Total Classes</div>
+                        <div class="footer-stat-value" id="sem${safeId}TotalClasses">0</div>
+                    </div>
+                    <div class="footer-stat">
+                        <div class="footer-stat-label">Total Attended</div>
+                        <div class="footer-stat-value" id="sem${safeId}TotalAttended">0</div>
+                    </div>
+                    <div class="footer-stat">
+                        <div class="footer-stat-label">Average %</div>
+                        <div class="footer-stat-value" id="sem${safeId}AvgPercentage">0%</div>
+                    </div>
+                `;
+
+                card.appendChild(footer);
+
+                container.appendChild(card);
+
+                // Populate the table for this semester
+                loadSemester(sem);
+            });
+        }
+
+        // Load individual semester data into dynamically created elements
+        function loadSemester(semNumber) {
+            const data = semesterData[semNumber] || [];
+            const safeId = semNumber.replace(/\s+/g, '');
+            const tbody = document.getElementById(`sem${safeId}Body`);
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="no-data">No data available</td></tr>';
+                return;
+            }
+
+            // Get the selected type from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedType = urlParams.get('type') || 'theory';
+            const classType = selectedType === 'lab' ? 'Lab' : 'Theory';
+
+            let totalClasses = 0;
+            let totalAttended = 0;
+            let totalPercentage = 0;
+
+            data.forEach(subject => {
+                const row = document.createElement('tr');
+                const badgeClass = getPercentageBadgeClass(subject.percentage);
+
+                row.innerHTML = `
+                    <td class="subject-name">
+                        ${subject.subject}
+                        <br>
+                        <button class="calendar-btn" onclick="openCalendar(${subject.subject_id}, '${subject.subject} - ${classType}', '${classType}')">📅 View Dates</button>
+                    </td>
+                    <td class="total-classes">${subject.totalClasses}</td>
+                    <td class="classes-attended">${subject.attended}</td>
+                    <td class="percentage-cell">
+                        <span class="percentage-badge ${badgeClass}">${subject.percentage}%</span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+
+                totalClasses += subject.totalClasses;
+                totalAttended += subject.attended;
+                totalPercentage += subject.percentage;
+            });
+
+            const averagePercentage = data.length > 0 ? Math.round(totalPercentage / data.length) : 0;
+
+            const totalId = document.getElementById(`sem${safeId}TotalClasses`);
+            const attendedId = document.getElementById(`sem${safeId}TotalAttended`);
+            const avgId = document.getElementById(`sem${safeId}AvgPercentage`);
+
+            if (totalId) totalId.textContent = totalClasses;
+            if (attendedId) attendedId.textContent = totalAttended;
+            if (avgId) avgId.textContent = averagePercentage + '%';
+        }
+
+        // Download PDF (basic implementation)
+        function downloadPDF() {
+            alert('📄 PDF download feature coming soon!\n\nYour attendance report will be exported as a PDF file.');
+        }
+
+        // Print report
+        function printReport() {
+            window.print();
+        }
+
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStudentInfo();
+            fetchSemesterData();
+        });
+    </script>
+</body>
+</html>

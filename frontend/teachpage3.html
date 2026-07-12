@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Records - Teacher Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ccccff);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar h2 { color: #667eea; font-size: 20px; }
+        .navbar a {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .navbar a:hover { transform: translateY(-2px); }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        .page-header {
+            background: white;
+            padding: 28px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .page-header h1 { color: #333; font-size: 26px; margin-bottom: 5px; }
+        .page-header p { color: #666; font-size: 14px; }
+
+        /* Control Box */
+        .control-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .control-box h3 {
+            color: #444;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .year-select {
+            width: 100%;
+            padding: 13px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            color: #333;
+            background: #fafafa;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 40px;
+        }
+        .year-select:focus { outline: none; border-color: #667eea; }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.2px;
+        }
+        .btn-students {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.35);
+        }
+        .btn-students:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.45); }
+        .btn-attendance {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+            box-shadow: 0 4px 15px rgba(17,153,142,0.35);
+        }
+        .btn-attendance:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(17,153,142,0.45); }
+        .action-btn.active-view { outline: 3px solid #333; outline-offset: 2px; }
+
+        /* Results area */
+        .results-section { display: none; }
+        .results-section.show { display: block; }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .results-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+        .results-count {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Student List Table */
+        .table-wrapper {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .table-scroll { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: linear-gradient(135deg, #667eea, #764ba2); }
+        thead th {
+            color: white;
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+        tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #f8f8ff; }
+        tbody td { padding: 13px 16px; font-size: 13px; color: #444; vertical-align: top; }
+
+        .serial-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700;
+        }
+        .reg-chip {
+            background: #f0f0ff;
+            color: #667eea;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .subject-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+        .subject-tag {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .no-subjects { color: #bbb; font-style: italic; font-size: 12px; }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #ff6b6b, #c92a2a);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .delete-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(201,42,42,0.4); }
+
+        /* Attendance Matrix */
+        .matrix-wrapper {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .matrix-scroll { overflow-x: auto; }
+
+        .matrix-table { width: 100%; border-collapse: collapse; }
+        .matrix-table thead { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .matrix-table thead th {
+            color: white;
+            padding: 12px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            text-align: center;
+            min-width: 90px;
+        }
+        .matrix-table thead th:first-child { text-align: left; min-width: 170px; position: sticky; left: 0; background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .matrix-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+        .matrix-table tbody tr:last-child { border-bottom: none; }
+        .matrix-table tbody tr:hover { background: #f8fffb; }
+        .matrix-table tbody td { padding: 10px; font-size: 13px; text-align: center; }
+        .matrix-table tbody td:first-child { text-align: left; padding: 10px 16px; position: sticky; left: 0; background: white; font-weight: 600; color: #333; border-right: 2px solid #e0e0e0; }
+        .matrix-table tbody tr:hover td:first-child { background: #f8fffb; }
+
+        .student-name-cell { display: flex; flex-direction: column; gap: 2px; }
+        .student-name-cell .name { font-weight: 700; color: #333; font-size: 13px; }
+        .student-name-cell .reg { color: #667eea; font-size: 11px; font-weight: 600; }
+
+        .pct-cell {
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-weight: 700;
+            font-size: 13px;
+            display: inline-block;
+            min-width: 55px;
+        }
+        .pct-high { background: #e8f5e9; color: #2e7d32; }
+        .pct-mid  { background: #fff8e1; color: #f57f17; }
+        .pct-low  { background: #ffebee; color: #c62828; }
+        .pct-na   { background: #f5f5f5; color: #bbb; }
+
+        /* Legend */
+        .matrix-legend {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 15px 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
+        .leg-dot { width: 14px; height: 14px; border-radius: 3px; }
+
+        /* Loading / Empty */
+        .loading-spinner {
+            text-align: center;
+            padding: 50px 20px;
+            color: #667eea;
+            font-size: 14px;
+        }
+        .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #bbb;
+            font-size: 14px;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 10px; }
+
+        /* Confirm Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            animation: popIn 0.25s ease;
+        }
+        @keyframes popIn {
+            from { transform: scale(0.85); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        .modal-box h3 { color: #333; margin-bottom: 10px; font-size: 18px; }
+        .modal-box p  { color: #666; font-size: 14px; margin-bottom: 22px; line-height: 1.5; }
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-actions button { flex: 1; padding: 11px; border: none; border-radius: 7px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-confirm-del { background: linear-gradient(135deg, #ff6b6b, #c92a2a); color: white; }
+        .btn-confirm-del:hover { transform: translateY(-1px); }
+        .btn-confirm-cancel { background: #ebebeb; color: #444; }
+        .btn-confirm-cancel:hover { background: #d8d8d8; }
+        .btn-confirm-del:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.35s ease;
+            z-index: 9999;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .toast.error   { background: linear-gradient(135deg, #ff6b6b, #c92a2a); }
+
+        @media (max-width: 640px) {
+            .action-buttons { flex-direction: column; }
+            .navbar { flex-direction: column; gap: 10px; }
+        }
+
+        /* ── Type Filter Bar ── */
+        .type-filter-bar {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            background: white;
+            border-radius: 10px;
+            padding: 12px 18px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+        }
+        .type-filter-bar.show { display: flex; }
+        .type-filter-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            white-space: nowrap;
+            margin-right: 6px;
+        }
+        .type-filter-btn {
+            padding: 7px 20px;
+            border: 2px solid #e0e0f0;
+            border-radius: 20px;
+            background: white;
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .type-filter-btn:hover:not(.tf-active) {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+        .type-filter-btn.tf-active {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 12px rgba(17,153,142,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>📊 Student Records</h2>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="menuToggleBtn" onclick="openManageModal()" style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.2s ease;
+                font-family: inherit;
+            " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">☰ Menu</button>
+            <a href="teachpage1.html">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Student Management Panel</h1>
+            <p>View registered students and attendance overview by year</p>
+        </div>
+
+        <!-- Control Box -->
+        <div class="control-box">
+            <h3>Select Academic Year</h3>
+            <select class="year-select" id="yearSelect">
+                <option value="1st year">1st Year</option>
+                <option value="2nd year">2nd Year</option>
+                <option value="3rd year">3rd Year</option>
+            </select>
+            <div class="action-buttons">
+                <button class="action-btn btn-students" id="btnStudents" onclick="showStudents()">
+                    👥 View Registered Students
+                </button>
+                <button class="action-btn btn-attendance" id="btnAttendance" onclick="showAttendance()">
+                    📈 View Attendance Overview
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <div class="results-title" id="resultsTitle">Students</div>
+                <div class="results-count" id="resultsCount">0 records</div>
+            </div>
+
+            <!-- Type filter bar – visible only during Attendance Overview -->
+            <div class="type-filter-bar" id="typeFilterBar">
+                <span class="type-filter-label">Show:</span>
+                <button class="type-filter-btn tf-active" data-filter="All"    onclick="setTypeFilter('All')">📊 All</button>
+                <button class="type-filter-btn"           data-filter="Theory" onclick="setTypeFilter('Theory')">📖 Theory Only</button>
+                <button class="type-filter-btn"           data-filter="Lab"    onclick="setTypeFilter('Lab')">🔬 Lab Only</button>
+            </div>
+
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-box">
+            <h3>🗑️ Delete Student</h3>
+            <p id="deleteMsg">Are you sure you want to delete this student? All their attendance records will also be removed.</p>
+            <div class="modal-actions">
+                <button class="btn-confirm-del" onclick="confirmDelete()">Yes, Delete</button>
+                <button class="btn-confirm-cancel" onclick="closeDeleteModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ── Auth guard ──────────────────────────────────────────────────
+        (function guardTeacher() {
+            if (!localStorage.getItem('teacherData')) {
+                window.location.replace('page1.html');
+            }
+        })();
+
+        let currentView = null;         // 'students' | 'attendance'
+        let currentTypeFilter = 'All';   // 'All' | 'Theory' | 'Lab'
+        let pendingDeleteId = null;
+        let pendingDeleteName = '';
+
+        function getYear() {
+            return document.getElementById('yearSelect').value;
+        }
+
+        function setActiveBtn(which) {
+            document.getElementById('btnStudents').classList.toggle('active-view', which === 'students');
+            document.getElementById('btnAttendance').classList.toggle('active-view', which === 'attendance');
+        }
+
+        // ── STUDENT LIST VIEW ────────────────────────────────────────────────
+        async function showStudents() {
+            currentView = 'students';
+            setActiveBtn('students');
+            // Hide the type filter bar – not relevant for student list
+            document.getElementById('typeFilterBar').classList.remove('show');
+            const year = getYear();
+            const yearLabel = year.charAt(0).toUpperCase() + year.slice(1);
+
+            const section = document.getElementById('resultsSection');
+            section.classList.add('show');
+            document.getElementById('resultsTitle').textContent = `${yearLabel} — Registered Students`;
+            document.getElementById('resultsContent').innerHTML = loadingHTML();
+
+            try {
+                const res = await fetch(`http://127.0.0.1:5000/get_students_by_year?year=${year}`);
+                const students = await res.json();
+                document.getElementById('resultsCount').textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
+                renderStudentList(students);
+            } catch(e) {
+                document.getElementById('resultsContent').innerHTML = errorHTML('Could not load students. Is the backend running?');
+            }
+        }
+
+        function renderStudentList(students) {
+            if (students.length === 0) {
+                document.getElementById('resultsContent').innerHTML = emptyHTML('No students registered for this year.');
+                return;
+            }
+
+            const rows = students.map(s => {
+                const subjectTags = s.subjects.length > 0
+                    ? s.subjects.map(sub => `<span class="subject-tag">${sub.subject_name} <span style="opacity:0.7">(${sub.subject_code})</span></span>`).join('')
+                    : '<span class="no-subjects">No subjects enrolled</span>';
+
+                return `
+                <tr>
+                    <td><div class="serial-badge">${s.serial}</div></td>
+                    <td><span class="reg-chip">${s.reg_number}</span></td>
+                    <td style="font-weight:600; color:#333;">${s.name}</td>
+                    <td><div class="subject-tags">${subjectTags}</div></td>
+                    <td>
+                        <button class="delete-btn" onclick="askDelete(${s.id}, '${s.name.replace(/'/g,"\\'")}')">
+                            🗑️ Delete
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('resultsContent').innerHTML = `
+                <div class="table-wrapper">
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Reg. Number</th>
+                                    <th>Student Name</th>
+                                    <th>Enrolled Subjects</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+        }
+
+        // ── ATTENDANCE MATRIX VIEW ──────────────────────────────────────────
+        async function showAttendance() {
+            currentView = 'attendance';
+            setActiveBtn('attendance');
+            // Show the type filter bar
+            document.getElementById('typeFilterBar').classList.add('show');
+            const year = getYear();
+            const yearLabel = year.charAt(0).toUpperCase() + year.slice(1);
+            const filterLabel = currentTypeFilter === 'All' ? '' : ` · ${currentTypeFilter} Only`;
+
+            const section = document.getElementById('resultsSection');
+            section.classList.add('show');
+            document.getElementById('resultsTitle').textContent = `${yearLabel} — Attendance Overview${filterLabel}`;
+            document.getElementById('resultsContent').innerHTML = loadingHTML();
+
+            try {
+                const res = await fetch(`http://127.0.0.1:5000/get_attendance_matrix?year=${encodeURIComponent(year)}&class_type=${encodeURIComponent(currentTypeFilter)}`);
+                const data = await res.json();
+                document.getElementById('resultsCount').textContent = `${data.students.length} student${data.students.length !== 1 ? 's' : ''}, ${data.subjects.length} subject${data.subjects.length !== 1 ? 's' : ''}`;
+                renderMatrix(data);
+            } catch(e) {
+                document.getElementById('resultsContent').innerHTML = errorHTML('Could not load attendance data. Is the backend running?');
+            }
+        }
+
+        // ── TYPE FILTER ──────────────────────────────────────────────────────
+        function setTypeFilter(filter) {
+            currentTypeFilter = filter;
+            // Update pill active state
+            document.querySelectorAll('.type-filter-btn').forEach(btn => {
+                btn.classList.toggle('tf-active', btn.getAttribute('data-filter') === filter);
+            });
+            // Reload the matrix with the new filter
+            if (currentView === 'attendance') showAttendance();
+        }
+
+        function pctClass(pct) {
+            if (pct >= 75) return 'pct-high';
+            if (pct >= 50) return 'pct-mid';
+            return 'pct-low';
+        }
+
+        function renderMatrix(data) {
+            const { subjects, students } = data;
+
+            if (students.length === 0) {
+                document.getElementById('resultsContent').innerHTML = emptyHTML('No students found for this year.');
+                return;
+            }
+            if (subjects.length === 0) {
+                document.getElementById('resultsContent').innerHTML = emptyHTML('No subjects enrolled by students of this year.');
+                return;
+            }
+
+            // Header row
+            const headerCells = subjects.map(sub =>
+                `<th title="${sub.subject_name} (${sub.subject_code})">${sub.subject_name}<br><span style="font-weight:400;font-size:10px;opacity:0.85">${sub.subject_code}</span></th>`
+            ).join('');
+
+            // Data rows
+            const bodyRows = students.map(stu => {
+                const cells = subjects.map(sub => {
+                    const info = stu.attendance[sub.id];
+                    if (info === null || info === undefined) {
+                        return `<td><span class="pct-cell pct-na">—</span></td>`;
+                    }
+                    const pct = info.percentage;
+                    return `<td>
+                        <span class="pct-cell ${pctClass(pct)}" title="${info.attended}/${info.total} classes">
+                            ${pct}%
+                        </span>
+                    </td>`;
+                }).join('');
+
+                return `<tr>
+                    <td>
+                        <div class="student-name-cell">
+                            <span class="name">${stu.name}</span>
+                            <span class="reg">${stu.reg_number}</span>
+                        </div>
+                    </td>
+                    ${cells}
+                </tr>`;
+            }).join('');
+
+            document.getElementById('resultsContent').innerHTML = `
+                <div class="matrix-wrapper">
+                    <div class="matrix-scroll">
+                        <table class="matrix-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    ${headerCells}
+                                </tr>
+                            </thead>
+                            <tbody>${bodyRows}</tbody>
+                        </table>
+                    </div>
+                    <div class="matrix-legend">
+                        <div class="leg-item"><div class="leg-dot" style="background:#e8f5e9;border:1.5px solid #2e7d32"></div> ≥75% Good</div>
+                        <div class="leg-item"><div class="leg-dot" style="background:#fff8e1;border:1.5px solid #f57f17"></div> 50–74% Average</div>
+                        <div class="leg-item"><div class="leg-dot" style="background:#ffebee;border:1.5px solid #c62828"></div> &lt;50% Low</div>
+                        <div class="leg-item"><div class="leg-dot" style="background:#f5f5f5;border:1.5px solid #ddd"></div> Not Enrolled</div>
+                        <div class="leg-item" style="margin-left:auto;font-style:italic;color:#999;">Hover a cell to see attended/total classes</div>
+                    </div>
+                </div>`;
+        }
+
+        // ── DELETE FLOW ──────────────────────────────────────────────────────
+        function askDelete(id, name) {
+            pendingDeleteId = id;
+            pendingDeleteName = name;
+            document.getElementById('deleteMsg').textContent =
+                `Are you sure you want to delete "${name}"? All their attendance records will also be permanently removed.`;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+            pendingDeleteId = null;
+        }
+
+        async function confirmDelete() {
+            if (!pendingDeleteId) return;
+
+            const delBtn = document.querySelector('.btn-confirm-del');
+            delBtn.disabled = true;
+            delBtn.textContent = 'Deleting...';
+
+            const idToDelete = pendingDeleteId;
+            const nameToDelete = pendingDeleteName;
+            closeDeleteModal();
+
+            try {
+                const res = await fetch(`http://127.0.0.1:5000/delete_student/${idToDelete}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(`✅ "${nameToDelete}" deleted successfully`, 'success');
+                    showStudents(); // refresh list
+                } else {
+                    showToast('❌ Error: ' + (data.error || 'Could not delete student.'), 'error');
+                }
+            } catch(e) {
+                showToast('❌ Network error. Is the backend running?', 'error');
+            } finally {
+                delBtn.disabled = false;
+                delBtn.textContent = 'Yes, Delete';
+            }
+        }
+
+        // ── HELPERS ──────────────────────────────────────────────────────────
+        function showToast(msg, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        function loadingHTML() {
+            return `<div class="loading-spinner"><div class="spinner"></div>Loading data...</div>`;
+        }
+        function emptyHTML(msg) {
+            return `<div class="empty-state"><div class="icon">📭</div>${msg}</div>`;
+        }
+        function errorHTML(msg) {
+            return `<div class="empty-state"><div class="icon">⚠️</div>${msg}</div>`;
+        }
+
+        // Re-run current view when year changes
+        document.getElementById('yearSelect').addEventListener('change', () => {
+            if (currentView === 'students') showStudents();
+            else if (currentView === 'attendance') showAttendance();
+        });
+
+        // Close modal on outside click
+        document.getElementById('deleteModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('deleteModal')) closeDeleteModal();
+        });
+    </script>
+
+    <script>
+        // ── Manage Modal ─────────────────────────────────────────────────────
+        function openManageModal() {
+            document.getElementById('manageModalRoot').style.display = 'flex';
+            try {
+                const data = JSON.parse(localStorage.getItem('studentData') || 'null')
+                          || JSON.parse(localStorage.getItem('teacherData') || 'null');
+                if (data) {
+                    const nameEl = document.getElementById('mgSenderName');
+                    const regEl  = document.getElementById('mgSenderReg');
+                    if (nameEl && data.name) nameEl.value = data.name;
+                    if (regEl) regEl.value = data.identifier || data.registerNumber || data.staffId || '';
+                }
+            } catch(_) {}
+            loadPromotionStatus();  // always sync toggle with DB on open
+        }
+
+        function closeManageModal() {
+            document.getElementById('manageModalRoot').style.display = 'none';
+        }
+
+        function switchMgTab(tabName) {
+            document.querySelectorAll('.mg-tab').forEach(t => t.classList.remove('mg-tab-active'));
+            document.getElementById('tab-' + tabName).classList.add('mg-tab-active');
+            document.querySelectorAll('.mg-section').forEach(s => s.classList.remove('mg-active'));
+            document.getElementById('mg-section-' + tabName).classList.add('mg-active');
+        }
+
+        // ── Promotion toggle ──────────────────────────────────────────────────
+        async function loadPromotionStatus() {
+            const toggle = document.getElementById('promoToggleInput');
+            const text   = document.getElementById('promoStatusText');
+            toggle.disabled = true;
+            text.style.color = '#888';
+            text.textContent = '⏳ Loading...';
+            try {
+                const res  = await fetch('http://127.0.0.1:5000/promotion_status');
+                const data = await res.json();
+                toggle.checked  = data.enabled;
+                toggle.disabled = false;
+                updatePromoUI(data.enabled);
+            } catch(e) {
+                text.textContent = '⚠️ Could not reach server';
+                text.style.color = '#e65100';
+            }
+        }
+
+        async function savePromotionStatus() {
+            const toggle    = document.getElementById('promoToggleInput');
+            const statusEl  = document.getElementById('promoSaveStatus');
+            const enabled   = toggle.checked;
+            toggle.disabled = true;
+            updatePromoUI(enabled);
+            statusEl.style.display = 'block';
+            statusEl.style.background = '#f0f4ff';
+            statusEl.style.color = '#667eea';
+            statusEl.textContent = 'Saving...';
+            try {
+                const res  = await fetch('http://127.0.0.1:5000/set_promotion_status', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ enabled })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    statusEl.style.background = enabled ? '#ecfdf5' : '#fff1f2';
+                    statusEl.style.color      = enabled ? '#16a34a' : '#be123c';
+                    statusEl.textContent = enabled
+                        ? '✅ Promotion is now ENABLED — students can promote themselves.'
+                        : '🔒 Promotion is now DISABLED — students cannot promote.';
+                } else {
+                    statusEl.style.background = '#fff1f2';
+                    statusEl.style.color = '#be123c';
+                    statusEl.textContent = '❌ Failed to save. Try again.';
+                }
+            } catch(e) {
+                statusEl.style.background = '#fff1f2';
+                statusEl.style.color = '#be123c';
+                statusEl.textContent = '❌ Network error. Is the backend running?';
+            } finally {
+                toggle.disabled = false;
+                setTimeout(() => { statusEl.style.display = 'none'; }, 3500);
+            }
+        }
+
+        function updatePromoUI(enabled) {
+            const text = document.getElementById('promoStatusText');
+            const card = document.getElementById('promoToggleCard');
+            if (enabled) {
+                text.textContent   = '🟢 Enabled — Students CAN promote';
+                text.style.color   = '#16a34a';
+                card.style.border  = '2px solid #bbf7d0';
+                card.style.background = 'linear-gradient(135deg,#f0fdf4,#dcfce7)';
+            } else {
+                text.textContent   = '🔴 Disabled — Students CANNOT promote';
+                text.style.color   = '#e65100';
+                card.style.border  = '2px solid #e0e0f5';
+                card.style.background = 'linear-gradient(135deg,#f8f8fd,#eef0ff)';
+            }
+        }
+
+        const ADMIN_EMAIL = 'neha.281711@gmail.com';
+
+        function sendHelpEmail(e) {
+            e.preventDefault();
+            const name    = document.getElementById('mgSenderName').value.trim();
+            const reg     = document.getElementById('mgSenderReg').value.trim();
+            const issue   = document.getElementById('mgIssueType').value;
+            const message = document.getElementById('mgMessage').value.trim();
+            const status  = document.getElementById('mgStatusMsg');
+
+            if (!name || !reg || !issue || !message) {
+                status.className = 'error';
+                status.textContent = '⚠️ Please fill in all fields before sending.';
+                status.style.display = 'block';
+                return;
+            }
+
+            const subject = encodeURIComponent(`[Attendance Portal] ${issue} – ${reg}`);
+            const body    = encodeURIComponent(
+                `Name: ${name}\nRegister / Staff ID: ${reg}\nIssue Type: ${issue}\n\nDescription:\n${message}\n\n---\nSent from Attendance Portal`
+            );
+            window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+
+            status.className = 'success';
+            status.textContent = '✅ Your email client has been opened. Please press Send to deliver your report to the admin.';
+            status.style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('mgHelpForm').reset();
+                try {
+                    const data = JSON.parse(localStorage.getItem('studentData') || 'null')
+                              || JSON.parse(localStorage.getItem('teacherData') || 'null');
+                    if (data) {
+                        document.getElementById('mgSenderName').value = data.name || '';
+                        document.getElementById('mgSenderReg').value  = data.identifier || data.registerNumber || data.staffId || '';
+                    }
+                } catch(_) {}
+            }, 1500);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeManageModal();
+        });
+    </script>
+
+    <!-- ══════════════════════════════════════
+         MANAGE MODAL (inlined)
+    ══════════════════════════════════════ -->
+    <style>
+        #manageModalRoot {
+            position: fixed; inset: 0; z-index: 9999;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(10,10,30,0.55);
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            padding: 20px; animation: mgFadeIn 0.25s ease;
+        }
+        @keyframes mgFadeIn { from{opacity:0} to{opacity:1} }
+        #manageModalPanel {
+            background:#fff; border-radius:18px; width:100%; max-width:560px;
+            max-height:90vh; overflow-y:auto;
+            box-shadow:0 30px 80px rgba(0,0,0,.25);
+            animation:mgSlideUp 0.3s cubic-bezier(.22,.68,0,1.2); position:relative;
+        }
+        @keyframes mgSlideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+        #manageModalHeader {
+            background:linear-gradient(135deg,#667eea,#764ba2);
+            border-radius:18px 18px 0 0; padding:24px 28px 20px;
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        #manageModalHeader h2 { color:#fff; font-size:20px; font-weight:700; letter-spacing:.3px; margin:0; }
+        #mgCloseBtn {
+            background:rgba(255,255,255,.2); border:none; color:#fff;
+            width:34px; height:34px; border-radius:50%; font-size:18px;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+            transition:background .2s;
+        }
+        #mgCloseBtn:hover { background:rgba(255,255,255,.35); }
+        #mgTabBar { display:flex; border-bottom:2px solid #ebebf5; background:#f8f8fd; }
+        .mg-tab {
+            flex:1; padding:14px 10px; text-align:center; font-size:14px; font-weight:600;
+            color:#888; cursor:pointer; border:none; background:none;
+            transition:color .2s,border-bottom .2s; border-bottom:3px solid transparent;
+            letter-spacing:.2px; font-family:inherit;
+        }
+        .mg-tab.mg-tab-active { color:#667eea; border-bottom:3px solid #667eea; background:#fff; }
+        .mg-tab:hover:not(.mg-tab-active) { color:#555; background:#f0f0fb; }
+        #mgPanelBody { padding:28px 28px 12px; }
+        .mg-section { display:none; }
+        .mg-section.mg-active { display:block; }
+        .mg-about-logo { display:flex; flex-direction:column; align-items:center; margin-bottom:22px; }
+        .mg-about-logo .mg-logo-icon {
+            width:72px; height:72px; border-radius:50%;
+            background:linear-gradient(135deg,#667eea,#764ba2);
+            display:flex; align-items:center; justify-content:center;
+            font-size:32px; margin-bottom:12px; box-shadow:0 8px 24px rgba(102,126,234,.35);
+        }
+        .mg-about-logo h3 { font-size:20px; font-weight:700; color:#2d2d50; margin:0 0 4px; }
+        .mg-about-logo p  { font-size:13px; color:#888; margin:0; }
+        .mg-about-desc {
+            background:#f4f4ff; border-left:4px solid #667eea; border-radius:8px;
+            padding:14px 16px; font-size:13.5px; color:#444; line-height:1.7; margin-bottom:20px;
+        }
+        .mg-feature-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+        .mg-feature-card {
+            background:linear-gradient(135deg,#f8f8fd,#eef0ff);
+            border:1px solid #e0e0f5; border-radius:10px; padding:14px; text-align:center;
+        }
+        .mg-feature-card .mg-feat-icon { font-size:22px; margin-bottom:6px; }
+        .mg-feature-card p { font-size:12px; font-weight:600; color:#555; margin:0; }
+        .mg-about-contact {
+            background:linear-gradient(135deg,#667eea11,#764ba211);
+            border-radius:10px; padding:14px 16px; font-size:13px; color:#555;
+            display:flex; align-items:center; gap:10px; margin-bottom:16px;
+        }
+        .mg-about-contact span.mg-mail-icon { font-size:20px; }
+        .mg-built-by {
+            text-align:center; padding:14px 10px 4px; font-size:12px; color:#aaa;
+            border-top:1px solid #ebebf5; margin-top:4px; letter-spacing:.2px;
+        }
+        .mg-built-by strong { color:#667eea; font-weight:700; }
+        .mg-help-title { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+        .mg-help-title .mg-help-icon {
+            width:42px; height:42px; border-radius:50%;
+            background:linear-gradient(135deg,#f093fb,#f5576c);
+            display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
+        }
+        .mg-help-title div h3 { font-size:16px; font-weight:700; color:#2d2d50; margin:0 0 2px; }
+        .mg-help-title div p  { font-size:12px; color:#888; margin:0; }
+        .mg-form-group { margin-bottom:16px; }
+        .mg-form-group label {
+            display:block; font-size:12px; font-weight:700; color:#555;
+            text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px;
+        }
+        .mg-form-group input, .mg-form-group select, .mg-form-group textarea {
+            width:100%; padding:11px 14px; border:2px solid #e8e8f5; border-radius:8px;
+            font-size:14px; font-family:inherit; color:#333; background:#fafafe;
+            transition:border-color .2s,box-shadow .2s; outline:none; resize:vertical;
+        }
+        .mg-form-group input:focus, .mg-form-group select:focus, .mg-form-group textarea:focus {
+            border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,.12); background:#fff;
+        }
+        .mg-form-group textarea { min-height:110px; }
+        #mgSendBtn {
+            width:100%; padding:13px;
+            background:linear-gradient(135deg,#667eea,#764ba2);
+            color:white; border:none; border-radius:8px; font-size:15px; font-weight:700;
+            cursor:pointer; transition:transform .2s,box-shadow .2s; font-family:inherit;
+            display:flex; align-items:center; justify-content:center; gap:8px;
+        }
+        #mgSendBtn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(102,126,234,.4); }
+        #mgSendBtn:active { transform:translateY(0); }
+        #mgStatusMsg {
+            display:none; margin-top:14px; padding:12px 16px;
+            border-radius:8px; font-size:13px; font-weight:600; text-align:center;
+        }
+        #mgStatusMsg.success { background:#ecfdf5; color:#16a34a; border:1px solid #bbf7d0; }
+        #mgStatusMsg.error   { background:#fff1f2; color:#be123c; border:1px solid #fecdd3; }
+        .mg-report-footer {
+            text-align:center; padding:14px 10px 4px; font-size:12px; color:#aaa;
+            border-top:1px solid #ebebf5; margin-top:16px; letter-spacing:.2px;
+        }
+        .mg-report-footer strong { color:#667eea; font-weight:700; }
+        /* ── Promotion toggle switch ── */
+        .promo-toggle-wrap {
+            position: relative; display: inline-block;
+            width: 56px; height: 30px; cursor: pointer; flex-shrink: 0;
+        }
+        .promo-toggle-wrap input { opacity: 0; width: 0; height: 0; }
+        .promo-toggle-slider {
+            position: absolute; inset: 0;
+            background: #ddd; border-radius: 30px;
+            transition: background 0.3s;
+        }
+        .promo-toggle-slider::before {
+            content: ''; position: absolute;
+            width: 22px; height: 22px; left: 4px; bottom: 4px;
+            background: white; border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .promo-toggle-wrap input:checked + .promo-toggle-slider {
+            background: linear-gradient(135deg,#22c55e,#16a34a);
+        }
+        .promo-toggle-wrap input:checked + .promo-toggle-slider::before {
+            transform: translateX(26px);
+        }
+        .promo-toggle-wrap input:disabled + .promo-toggle-slider { opacity: 0.6; cursor: not-allowed; }
+        @media(max-width:480px) {
+            #manageModalPanel { border-radius:14px; }
+            #manageModalHeader { border-radius:14px 14px 0 0; padding:18px 20px 16px; }
+            #mgPanelBody { padding:20px 18px 10px; }
+            .mg-feature-grid { grid-template-columns:1fr; }
+        }
+    </style>
+
+    <div id="manageModalRoot" onclick="if(event.target===this)closeManageModal()">
+        <div id="manageModalPanel" role="dialog" aria-modal="true" aria-labelledby="mgModalTitle">
+            <div id="manageModalHeader">
+                <h2 id="mgModalTitle">⚙️ Menu</h2>
+                <button id="mgCloseBtn" onclick="closeManageModal()" title="Close">✕</button>
+            </div>
+            <div id="mgTabBar" role="tablist">
+                <button class="mg-tab mg-tab-active" id="tab-about"     role="tab" onclick="switchMgTab('about')">ℹ️ About Us</button>
+                <button class="mg-tab"               id="tab-promotion" role="tab" onclick="switchMgTab('promotion')">🎓 Promotion</button>
+                <button class="mg-tab"               id="tab-report"    role="tab" onclick="switchMgTab('report')">📧 Report / Help</button>
+            </div>
+            <div id="mgPanelBody">
+                <!-- About Us -->
+                <section id="mg-section-about" class="mg-section mg-active" role="tabpanel">
+                    <div class="mg-about-logo">
+                        <div class="mg-logo-icon">📊</div>
+                        <h3>Attendance Portal</h3>
+                        <p>Student Attendance Management System</p>
+                    </div>
+                    <div class="mg-about-desc">
+                        This portal lets students and teachers manage attendance across all enrolled subjects — track year-wise records, view subject analytics, and stay informed about academic standing in real time.
+                    </div>
+                    <div class="mg-feature-grid">
+                        <div class="mg-feature-card"><div class="mg-feat-icon">📅</div><p>Daily Attendance Tracking</p></div>
+                        <div class="mg-feature-card"><div class="mg-feat-icon">📈</div><p>Subject-wise Analytics</p></div>
+                        <div class="mg-feature-card"><div class="mg-feat-icon">🔒</div><p>Year-based Access Control</p></div>
+                        <div class="mg-feature-card"><div class="mg-feat-icon">👨‍🏫</div><p>Teacher &amp; Student Portals</p></div>
+                    </div>
+                    <div class="mg-about-contact">
+                        <span class="mg-mail-icon">📬</span>
+                        <div>
+                            <strong>Admin Contact:</strong>&nbsp;
+                            <a href="mailto:neha.281711@gmail.com" style="color:#667eea;text-decoration:none;">neha.281711@gmail.com</a><br>
+                            <span style="font-size:12px;color:#999;">For issues or queries, use the Report / Help tab.</span>
+                        </div>
+                    </div>
+                    <div class="mg-built-by">Built by <strong>Ateeha Banu</strong>&nbsp;·&nbsp;Bengaluru City University</div>
+                </section>
+
+                <!-- 🎓 Promotion Toggle -->
+                <section id="mg-section-promotion" class="mg-section" role="tabpanel">
+                    <div style="text-align:center;margin-bottom:22px;">
+                        <div style="font-size:48px;margin-bottom:10px;">🎓</div>
+                        <h3 style="font-size:17px;font-weight:700;color:#2d2d50;margin:0 0 6px;">Year Promotion Control</h3>
+                        <p style="font-size:13px;color:#888;margin:0;">Allow or block students from promoting to the next academic year.</p>
+                    </div>
+
+                    <!-- Toggle card -->
+                    <div id="promoToggleCard" style="background:linear-gradient(135deg,#f8f8fd,#eef0ff);border:2px solid #e0e0f5;border-radius:14px;padding:22px 20px;margin-bottom:20px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+                            <div>
+                                <div style="font-size:15px;font-weight:700;color:#333;margin-bottom:4px;">Student Promotion</div>
+                                <div id="promoStatusText" style="font-size:13px;color:#e65100;font-weight:600;">⏳ Loading...</div>
+                            </div>
+                            <!-- Toggle switch -->
+                            <label class="promo-toggle-wrap" title="Toggle promotion on/off">
+                                <input type="checkbox" id="promoToggleInput" onchange="savePromotionStatus()" disabled>
+                                <span class="promo-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="background:#fff8e1;border-left:4px solid #f59e0b;border-radius:8px;padding:14px 16px;font-size:13px;color:#555;line-height:1.6;margin-bottom:16px;">
+                        <strong>💡 How it works:</strong><br>
+                        • When <strong style="color:#16a34a;">ON</strong>: Students can visit the Promote Year page and advance to the next academic year. No code needed.<br>
+                        • When <strong style="color:#e65100;">OFF</strong>: The promotion page is locked and students cannot promote themselves.
+                    </div>
+
+                    <div id="promoSaveStatus" style="display:none;text-align:center;font-size:13px;font-weight:600;padding:10px;border-radius:8px;margin-top:4px;"></div>
+                </section>
+
+                <!-- Report / Help -->
+                <section id="mg-section-report" class="mg-section" role="tabpanel">
+                    <div class="mg-help-title">
+                        <div class="mg-help-icon">🛟</div>
+                        <div><h3>Send a Report to Admin</h3><p>Describe your issue and we'll get back to you shortly.</p></div>
+                    </div>
+                    <form id="mgHelpForm" onsubmit="sendHelpEmail(event)" novalidate>
+                        <div class="mg-form-group">
+                            <label for="mgSenderName">Your Name</label>
+                            <input type="text" id="mgSenderName" placeholder="e.g. Ravi Kumar" autocomplete="name" required>
+                        </div>
+                        <div class="mg-form-group">
+                            <label for="mgSenderReg">Register Number / Staff ID</label>
+                            <input type="text" id="mgSenderReg" placeholder="e.g. 21CSE001" required>
+                        </div>
+                        <div class="mg-form-group">
+                            <label for="mgIssueType">Issue Type</label>
+                            <select id="mgIssueType" required>
+                                <option value="" disabled selected>— Select category —</option>
+                                <option value="Attendance Mismatch">Attendance Mismatch</option>
+                                <option value="Login / Access Problem">Login / Access Problem</option>
+                                <option value="Missing Subject">Missing Subject</option>
+                                <option value="Wrong Year Shown">Wrong Year Shown</option>
+                                <option value="Technical / App Error">Technical / App Error</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mg-form-group">
+                            <label for="mgMessage">Describe your Problem</label>
+                            <textarea id="mgMessage" placeholder="Please describe the issue in detail…" required></textarea>
+                        </div>
+                        <button type="submit" id="mgSendBtn"><span>📨</span> Send to Admin</button>
+                    </form>
+                    <div id="mgStatusMsg"></div>
+                    <div class="mg-report-footer">Built by <strong>Ateeha Banu</strong>&nbsp;·&nbsp;Bengaluru City University</div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

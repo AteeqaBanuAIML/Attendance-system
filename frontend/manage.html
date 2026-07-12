@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu – Attendance Portal</title>
+    <style>
+        /* ══════════════════════════════════════════════
+           Manage Modal – all styles scoped under
+           #manageModalRoot so they don't bleed into
+           the host page (page3.html / teachpage3.html).
+        ══════════════════════════════════════════════ */
+
+        #manageModalRoot {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 10, 30, 0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            padding: 20px;
+            animation: mgFadeIn 0.25s ease;
+        }
+
+        @keyframes mgFadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        #manageModalPanel {
+            background: #fff;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.25);
+            animation: mgSlideUp 0.3s cubic-bezier(.22,.68,0,1.2);
+            position: relative;
+        }
+
+        @keyframes mgSlideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        /* ── Header ── */
+        #manageModalHeader {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 18px 18px 0 0;
+            padding: 24px 28px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #manageModalHeader h2 {
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            margin: 0;
+        }
+
+        #mgCloseBtn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #fff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        #mgCloseBtn:hover { background: rgba(255,255,255,0.35); }
+
+        /* ── Tab bar ── */
+        #mgTabBar {
+            display: flex;
+            border-bottom: 2px solid #ebebf5;
+            background: #f8f8fd;
+        }
+
+        .mg-tab {
+            flex: 1;
+            padding: 14px 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+            border: none;
+            background: none;
+            transition: color 0.2s, border-bottom 0.2s;
+            border-bottom: 3px solid transparent;
+            letter-spacing: 0.2px;
+            font-family: inherit;
+        }
+
+        .mg-tab.mg-tab-active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            background: #fff;
+        }
+
+        .mg-tab:hover:not(.mg-tab-active) {
+            color: #555;
+            background: #f0f0fb;
+        }
+
+        /* ── Panel body ── */
+        #mgPanelBody {
+            padding: 28px 28px 12px;
+        }
+
+        /* ── Tab content ── */
+        .mg-section { display: none; }
+        .mg-section.mg-active { display: block; }
+
+        /* ── About Us ── */
+        .mg-about-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .mg-about-logo .mg-logo-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 24px rgba(102,126,234,0.35);
+        }
+
+        .mg-about-logo h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d2d50;
+            margin: 0 0 4px;
+        }
+
+        .mg-about-logo p {
+            font-size: 13px;
+            color: #888;
+            margin: 0;
+        }
+
+        .mg-about-desc {
+            background: #f4f4ff;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 13.5px;
+            color: #444;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .mg-feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .mg-feature-card {
+            background: linear-gradient(135deg, #f8f8fd, #eef0ff);
+            border: 1px solid #e0e0f5;
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .mg-feature-card .mg-feat-icon {
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        .mg-feature-card p {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            margin: 0;
+        }
+
+        .mg-about-contact {
+            background: linear-gradient(135deg, #667eea11, #764ba211);
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 13px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .mg-about-contact span.mg-mail-icon {
+            font-size: 20px;
+        }
+
+        /* Built-by credit strip */
+        .mg-built-by {
+            text-align: center;
+            padding: 14px 10px 4px;
+            font-size: 12px;
+            color: #aaa;
+            border-top: 1px solid #ebebf5;
+            margin-top: 4px;
+            letter-spacing: 0.2px;
+        }
+        .mg-built-by strong {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        /* ── Report / Help ── */
+        .mg-help-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .mg-help-title .mg-help-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .mg-help-title div h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d2d50;
+            margin: 0 0 2px;
+        }
+
+        .mg-help-title div p {
+            font-size: 12px;
+            color: #888;
+            margin: 0;
+        }
+
+        .mg-form-group {
+            margin-bottom: 16px;
+        }
+
+        .mg-form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 7px;
+        }
+
+        .mg-form-group input,
+        .mg-form-group select,
+        .mg-form-group textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 2px solid #e8e8f5;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #333;
+            background: #fafafe;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            resize: vertical;
+        }
+
+        .mg-form-group input:focus,
+        .mg-form-group select:focus,
+        .mg-form-group textarea:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+            background: #fff;
+        }
+
+        .mg-form-group textarea {
+            min-height: 110px;
+        }
+
+        #mgSendBtn {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        #mgSendBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102,126,234,0.4);
+        }
+
+        #mgSendBtn:active { transform: translateY(0); }
+
+        #mgStatusMsg {
+            display: none;
+            margin-top: 14px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        #mgStatusMsg.success {
+            background: #ecfdf5;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        #mgStatusMsg.error {
+            background: #fff1f2;
+            color: #be123c;
+            border: 1px solid #fecdd3;
+        }
+
+        /* Report tab built-by strip */
+        .mg-report-footer {
+            text-align: center;
+            padding: 14px 10px 4px;
+            font-size: 12px;
+            color: #aaa;
+            border-top: 1px solid #ebebf5;
+            margin-top: 16px;
+            letter-spacing: 0.2px;
+        }
+        .mg-report-footer strong { color: #667eea; font-weight: 700; }
+
+        @media (max-width: 480px) {
+            #manageModalPanel { border-radius: 14px; }
+            #manageModalHeader { border-radius: 14px 14px 0 0; padding: 18px 20px 16px; }
+            #mgPanelBody { padding: 20px 18px 10px; }
+            .mg-feature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     MANAGE MODAL ROOT
+     (injected by page3.html / teachpage3.html)
+══════════════════════════════════════ -->
+<div id="manageModalRoot">
+    <div id="manageModalPanel" role="dialog" aria-modal="true" aria-labelledby="mgModalTitle">
+
+        <!-- Header -->
+        <div id="manageModalHeader">
+            <h2 id="mgModalTitle">⚙️ Menu</h2>
+            <button id="mgCloseBtn" onclick="closeManageModal()" title="Close">✕</button>
+        </div>
+
+        <!-- Tab bar -->
+        <div id="mgTabBar" role="tablist">
+            <button class="mg-tab mg-tab-active" id="tab-about"  role="tab" onclick="switchMgTab('about')">ℹ️ About Us</button>
+            <button class="mg-tab"               id="tab-report" role="tab" onclick="switchMgTab('report')">📧 Report / Help</button>
+        </div>
+
+        <!-- Body -->
+        <div id="mgPanelBody">
+
+            <!-- ── ABOUT US ── -->
+            <section id="mg-section-about" class="mg-section mg-active" role="tabpanel">
+                <div class="mg-about-logo">
+                    <div class="mg-logo-icon">📊</div>
+                    <h3>Attendance Portal</h3>
+                    <p>Student Attendance Management System</p>
+                </div>
+
+                <div class="mg-about-desc">
+                    This portal lets students and teachers manage attendance across all enrolled subjects — track year-wise records, view subject analytics, and stay informed about academic standing in real time.
+                </div>
+
+                <div class="mg-feature-grid">
+                    <div class="mg-feature-card">
+                        <div class="mg-feat-icon">📅</div>
+                        <p>Daily Attendance Tracking</p>
+                    </div>
+                    <div class="mg-feature-card">
+                        <div class="mg-feat-icon">📈</div>
+                        <p>Subject-wise Analytics</p>
+                    </div>
+                    <div class="mg-feature-card">
+                        <div class="mg-feat-icon">🔒</div>
+                        <p>Year-based Access Control</p>
+                    </div>
+                    <div class="mg-feature-card">
+                        <div class="mg-feat-icon">👨‍🏫</div>
+                        <p>Teacher &amp; Student Portals</p>
+                    </div>
+                </div>
+
+                <div class="mg-about-contact">
+                    <span class="mg-mail-icon">📬</span>
+                    <div>
+                        <strong>Admin Contact:</strong>&nbsp;
+                        <a href="mailto:neha.281711@gmail.com" style="color:#667eea;text-decoration:none;">neha.281711@gmail.com</a>
+                        <br>
+                        <span style="font-size:12px;color:#999;">For issues or queries, use the Report / Help tab.</span>
+                    </div>
+                </div>
+
+                <!-- Built-by credit -->
+                <div class="mg-built-by">
+                    Built by <strong>Ateeha Banu</strong> &nbsp;·&nbsp; Bengaluru City University
+                </div>
+            </section>
+
+            <!-- ── REPORT / HELP ── -->
+            <section id="mg-section-report" class="mg-section" role="tabpanel">
+                <div class="mg-help-title">
+                    <div class="mg-help-icon">🛟</div>
+                    <div>
+                        <h3>Send a Report to Admin</h3>
+                        <p>Describe your issue and we'll get back to you shortly.</p>
+                    </div>
+                </div>
+
+                <form id="mgHelpForm" onsubmit="sendHelpEmail(event)" novalidate>
+                    <div class="mg-form-group">
+                        <label for="mgSenderName">Your Name</label>
+                        <input type="text" id="mgSenderName" placeholder="e.g. Ravi Kumar" autocomplete="name" required>
+                    </div>
+
+                    <div class="mg-form-group">
+                        <label for="mgSenderReg">Register Number / Staff ID</label>
+                        <input type="text" id="mgSenderReg" placeholder="e.g. 21CSE001" required>
+                    </div>
+
+                    <div class="mg-form-group">
+                        <label for="mgIssueType">Issue Type</label>
+                        <select id="mgIssueType" required>
+                            <option value="" disabled selected>— Select category —</option>
+                            <option value="Attendance Mismatch">Attendance Mismatch</option>
+                            <option value="Login / Access Problem">Login / Access Problem</option>
+                            <option value="Missing Subject">Missing Subject</option>
+                            <option value="Wrong Year Shown">Wrong Year Shown</option>
+                            <option value="Technical / App Error">Technical / App Error</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mg-form-group">
+                        <label for="mgMessage">Describe your Problem</label>
+                        <textarea id="mgMessage" placeholder="Please describe the issue in detail…" required></textarea>
+                    </div>
+
+                    <button type="submit" id="mgSendBtn">
+                        <span>📨</span> Send to Admin
+                    </button>
+                </form>
+
+                <div id="mgStatusMsg"></div>
+
+                <!-- Built-by credit -->
+                <div class="mg-report-footer">
+                    Built by <strong>Ateeha Banu</strong> &nbsp;·&nbsp; Bengaluru City University
+                </div>
+            </section>
+
+        </div><!-- /mgPanelBody -->
+    </div><!-- /manageModalPanel -->
+</div><!-- /manageModalRoot -->
+
+<script>
+    const ADMIN_EMAIL = 'neha.281711@gmail.com';
+
+    // ── Close modal ──────────────────────────────────────────────────────────
+    function closeManageModal() {
+        const root = document.getElementById('manageModalRoot');
+        if (root) root.style.display = 'none';
+    }
+
+    // Close on backdrop click
+    document.getElementById('manageModalRoot').addEventListener('click', function(e) {
+        if (e.target === this) closeManageModal();
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeManageModal();
+    });
+
+    // ── Tab switching ────────────────────────────────────────────────────────
+    function switchMgTab(tabName) {
+        document.querySelectorAll('.mg-tab').forEach(t => t.classList.remove('mg-tab-active'));
+        document.getElementById('tab-' + tabName).classList.add('mg-tab-active');
+        document.querySelectorAll('.mg-section').forEach(s => s.classList.remove('mg-active'));
+        document.getElementById('mg-section-' + tabName).classList.add('mg-active');
+    }
+
+    // ── Auto-fill name & ID from localStorage ───────────────────────────────
+    (function prefillForm() {
+        try {
+            const data = JSON.parse(localStorage.getItem('studentData') || 'null')
+                      || JSON.parse(localStorage.getItem('teacherData') || 'null');
+            if (!data) return;
+            const nameEl = document.getElementById('mgSenderName');
+            const regEl  = document.getElementById('mgSenderReg');
+            if (nameEl && data.name) nameEl.value = data.name;
+            if (regEl) regEl.value = data.identifier || data.registerNumber || data.staffId || '';
+        } catch(_) {}
+    })();
+
+    // ── Send email to admin ──────────────────────────────────────────────────
+    function sendHelpEmail(e) {
+        e.preventDefault();
+
+        const name    = document.getElementById('mgSenderName').value.trim();
+        const reg     = document.getElementById('mgSenderReg').value.trim();
+        const issue   = document.getElementById('mgIssueType').value;
+        const message = document.getElementById('mgMessage').value.trim();
+        const status  = document.getElementById('mgStatusMsg');
+
+        if (!name || !reg || !issue || !message) {
+            status.className = 'error';
+            status.textContent = '⚠️ Please fill in all fields before sending.';
+            status.style.display = 'block';
+            return;
+        }
+
+        const subject = encodeURIComponent(`[Attendance Portal] ${issue} – ${reg}`);
+        const body    = encodeURIComponent(
+            `Name: ${name}\nRegister / Staff ID: ${reg}\nIssue Type: ${issue}\n\nDescription:\n${message}\n\n---\nSent from Attendance Portal`
+        );
+
+        // Opens the user's default email client with admin address pre-filled
+        window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+
+        status.className = 'success';
+        status.textContent = '✅ Your email client has been opened. Please press Send to deliver your report to the admin.';
+        status.style.display = 'block';
+
+        // Reset form after a short delay
+        setTimeout(() => {
+            document.getElementById('mgHelpForm').reset();
+            // Re-prefill name & reg after reset
+            try {
+                const data = JSON.parse(localStorage.getItem('studentData') || 'null')
+                          || JSON.parse(localStorage.getItem('teacherData') || 'null');
+                if (data) {
+                    document.getElementById('mgSenderName').value = data.name || '';
+                    document.getElementById('mgSenderReg').value  = data.identifier || data.registerNumber || data.staffId || '';
+                }
+            } catch(_) {}
+        }, 1500);
+    }
+</script>
+</body>
+</html>

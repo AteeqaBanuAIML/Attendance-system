@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System - Registration</title>
+    <style>
+        /* same styles as page1.html to maintain consistency */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg,#ccccff);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: #efebf8;
+            border-radius: 70px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+            appearance: none; /* hide default arrow */
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #999;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+        }
+
+        .info-text {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .subject-card {
+            display: block;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            color: #555;
+            font-weight: 500;
+            user-select: none;
+        }
+
+        .subject-card input[type="checkbox"] {
+            display: none;
+        }
+
+        .subject-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.1);
+        }
+
+        .subject-card.selected {
+            border-color: #4CAF50;
+            background-color: #f2fcf5;
+            color: #2e7d32;
+        }
+
+        .tick-mark {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #4CAF50;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .subject-card.selected .tick-mark {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        @media (max-width: 600px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .form-group input {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="header">
+            <h1>Attendance System</h1>
+            <p>Student Registration</p>
+        </div>
+
+        <form id="registrationForm" onsubmit="handleRegister(event)">
+            <!-- Student Name -->
+            <div class="form-group">
+                <label for="regName">Student Name</label>
+                <input type="text" id="regName" placeholder="Enter full name" required>
+            </div>
+
+            <!-- Register Number -->
+            <div class="form-group">
+                <label for="regNumber">Register Number</label>
+                <input type="text" id="regNumber" placeholder="Enter registration number" required>
+            </div>
+
+            <!-- Department -->
+            <div class="form-group">
+                <label for="department">Department</label>
+                <input type="text" id="department" placeholder="Enter department" required>
+            </div>
+
+            <!-- Year -->
+            <div class="form-group">
+                <label for="year">Year</label>
+                <select id="year" required>
+                    <option value="">Select year</option>
+                    <option value="1st year">1st year</option>
+                    <option value="2nd year">2nd year</option>
+                    <option value="3rd year">3rd year</option>
+                </select>
+            </div>
+
+            <!-- Subjects -->
+            <div class="form-group" id="subjectsCheckboxes">
+                <label>Subjects</label>
+                <div class="subjects-grid" id="subjectsContainer">
+                </div>
+            </div>
+
+            <button type="submit" class="submit-button">Submit</button>
+        </form>
+
+        <p class="info-text">Once registered, you can login from the home page.</p>
+        <p class="info-text" style="margin-top: 10px;">
+            Already registered? &nbsp;<a href="promotion.html" style="color:#667eea;text-decoration:none;font-weight:600;">🎓 Promote to Next Year →</a>
+        </p>
+    </div>
+
+    <script>
+        async function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const number = document.getElementById('regNumber').value.trim();
+            const dept = document.getElementById('department').value.trim();
+            const year = document.getElementById('year').value;
+            const subjects = Array.from(document.querySelectorAll('input[name="subject"]:checked'))
+                                  .map(i => i.value);
+
+            if (!name || !number || !dept || !year || subjects.length === 0) {
+                alert('Please fill in all fields and select at least one subject');
+                return;
+            }
+
+            // const regData = {name, number, dept, year, subjects};
+            // localStorage.setItem('registrationData', JSON.stringify(regData));
+            // console.log('Registered:', regData);
+            // alert('Registration successful!');
+            // window.location.href = 'page1.html';
+            const response = await fetch("http://127.0.0.1:5000/register_student", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name, number, dept, year, subjects })
+            });
+
+            const data = await response.json();
+
+            alert(data.message);
+
+            window.location.href = "page1.html";
+        }
+
+        // to load subjects
+        window.addEventListener('DOMContentLoaded', loadSubjectsForRegistration);
+
+            async function loadSubjectsForRegistration() {
+
+                const response = await fetch("http://127.0.0.1:5000/get_subjects");
+                const subjects = await response.json();
+
+                const container = document.getElementById("subjectsContainer");
+
+                container.innerHTML = "";
+
+                subjects.forEach(sub => {
+
+                    const label = document.createElement("label");
+                    label.className = "subject-card";
+
+                    label.innerHTML = `
+                        <input type="checkbox" name="subject" value="${sub.id}"
+                            onchange="this.parentElement.classList.toggle('selected', this.checked)">
+                        ${sub.subject_name}
+                        <div class="tick-mark">✓</div>
+                    `;
+
+                    container.appendChild(label);
+                });
+}
+    </script>
+</body>
+</html>

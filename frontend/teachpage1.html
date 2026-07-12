@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Attendance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ccccff);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h2 {
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        .navbar a {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .navbar a:hover {
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .page-header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .page-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .teacher-info {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .profile-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4facfe 0%, #8b5cf6 100%);
+            border: 3px solid #4facfe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .profile-pic img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-pic-icon {
+            font-size: 30px;
+            color: white;
+        }
+
+        .user-details {
+            text-align: left;
+        }
+
+        .user-name {
+            color: #333;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .user-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+        }
+
+        .user-meta span {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .user-meta span.label {
+            color: #666;
+            margin-right: 5px;
+        }
+
+        .controls-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-wrapper {
+            flex: 1;
+            min-width: 250px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .subjects-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .subject-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .subject-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .subject-name {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .subject-code {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+
+        .subject-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .subject-detail {
+            color: #666;
+        }
+
+        .subject-detail span {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .subject-badge-lang {
+            display: inline-block;
+            margin-bottom: 10px;
+            padding: 3px 10px;
+            background: linear-gradient(135deg, #a78bfa 0%, #764ba2 100%);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+        }
+
+        .subject-action {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .type-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .type-btn:hover {
+            border-color: #667eea;
+            background: #f5f5ff;
+        }
+
+        .type-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .upload-btn-card {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .upload-btn-card.show {
+            display: block;
+        }
+
+        .upload-btn-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            grid-column: 1 / -1;
+        }
+
+        .no-results p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .btn-submit,
+        .btn-cancel {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #d0d0d0;
+        }
+
+        /* Subject Category Toggle */
+        .category-toggle {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .category-toggle input[type="radio"] {
+            display: none;
+        }
+
+        .category-toggle label {
+            flex: 1;
+            padding: 10px 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: #f8f8f8;
+            user-select: none;
+        }
+
+        .category-toggle label:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+            color: #667eea;
+        }
+
+        .category-toggle input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 22px;
+            }
+
+            .controls-section {
+                flex-direction: column;
+            }
+
+            .search-wrapper {
+                flex-direction: column;
+                min-width: auto;
+            }
+
+            .subjects-container {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .teacher-info {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>👨‍🏫 Teacher Dashboard</h2>
+        <div style="display:flex;gap:10px;">
+            <a href="teachpage3.html">📊 Student Records</a>
+            <a href="#" onclick="doLogout()" id="logoutBtn">← Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Manage Subjects & Attendance</h1>
+            <p>View and manage your assigned subjects</p>
+        </div>
+
+        <div class="teacher-info">
+            <div class="profile-info">
+                <div class="profile-pic" id="profilePic">
+                    <span class="profile-pic-icon">👨‍🏫</span>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Loading...</div>
+                    <div class="user-meta">
+                        <div><span class="label">ID:</span><span id="userId">---</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <div class="search-wrapper">
+                <input 
+                    type="text" 
+                    id="searchBox" 
+                    class="search-box" 
+                    placeholder="Search subjects by name or code..."
+                    onkeyup="searchSubjects()"
+                >
+                <button class="search-btn" onclick="searchSubjects()">🔍 Search</button>
+            </div>
+            <button class="search-btn" onclick="addSubject()">➕ Add Subject</button>
+            <button class="search-btn" onclick="deleteSubject()" style="background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);">🗑️ Delete Subject</button>
+        </div>
+
+        <div class="subjects-container" id="subjectsContainer">
+            <!-- Subjects will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Add Subject Modal -->
+    <div class="modal" id="addSubjectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>➕ Add New Subject</span>
+                <button class="modal-close" onclick="closeAddSubjectModal()">✕</button>
+            </div>
+            <form onsubmit="submitAddSubject(event)">
+                <div class="form-group">
+                    <label for="subjectName">Enter the name of the subject</label>
+                    <input 
+                        type="text" 
+                        id="subjectName" 
+                        name="subject_name"
+                        placeholder="e.g., Data Structures" 
+                        required
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="subjectCode">Subject Code</label>
+                    <input 
+                        type="text" 
+                        id="subjectCode"
+                        name="subject_code" 
+                        placeholder="e.g., CS101" 
+                        required
+                    >
+                </div>
+                <div class="form-group">
+                    <label>Subject Category</label>
+                    <div class="category-toggle">
+                        <input type="radio" id="catCourse" name="subject_category" value="course" required>
+                        <label for="catCourse">📚 Course Subject</label>
+                        <input type="radio" id="catLanguage" name="subject_category" value="language">
+                        <label for="catLanguage">🗣️ Language</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="studentCount">Number of Students</label>
+                    <input 
+                        type="number" 
+                        id="studentCount"
+                        name="student_count" 
+                        placeholder="e.g., 45" 
+                        min="1"
+                        required
+                    >
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-submit">➕ Add Subject</button>
+                    <button type="button" class="btn-cancel" onclick="closeAddSubjectModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Subject Modal -->
+    <div class="modal" id="deleteSubjectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>🗑️ Delete Subject</span>
+                <button class="modal-close" onclick="closeDeleteSubjectModal()">✕</button>
+            </div>
+            <div class="form-group">
+                <label for="subjectSelectDelete">Select subject to delete</label>
+                <select id="subjectSelectDelete" required>
+                    <option value="">Choose a subject...</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-submit" style="background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);" onclick="confirmDeleteSubject()">🗑️ Delete</button>
+                <button type="button" class="btn-cancel" onclick="closeDeleteSubjectModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Auth guard ──────────────────────────────────────────────────
+        (function guardTeacher() {
+            if (!localStorage.getItem('teacherData')) {
+                window.location.replace('page1.html');
+            }
+        })();
+
+        function doLogout() {
+            localStorage.removeItem('teacherData');
+            localStorage.removeItem('userData');
+            window.location.href = 'page1.html';
+        }
+
+        let allSubjects = [];
+
+        let filteredSubjects = [...allSubjects];
+
+        // Load teacher info
+        function loadTeacherInfo() {
+            const userData = JSON.parse(localStorage.getItem('userData') || 'null');
+            
+            if (userData) {
+                document.getElementById('userName').textContent = userData.name || 'Unknown Teacher';
+                document.getElementById('userId').textContent = userData.identifier || '---';
+            }
+        }
+
+        // Display subjects as cards
+        function displaySubjects(subjects) {
+            const container = document.getElementById('subjectsContainer');
+            
+            if (subjects.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <p>No subjects found matching your search.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = subjects.map(subject => {
+                const isLanguage = subject.category === 'language';
+                return `
+                <div class="subject-card">
+                    <div class="subject-icon">${subject.icon}</div> 
+                    <div class="subject-name">${subject.name}</div>
+                    <div class="subject-code">${subject.code}</div>
+                    ${isLanguage ? '<div class="subject-badge-lang">🗣️ Language</div>' : ''}
+                    <div class="subject-details">
+                        <div class="subject-detail"><span>Students:</span> ${subject.students}</div>
+                    </div>
+                    <div class="subject-action">
+                        ${isLanguage ? `
+                            <button class="upload-btn-card show" id="uploadBtn-${subject.id}"
+                                data-selected-type="Theory"
+                                data-selected-subject="${subject.name}"
+                                onclick="uploadAttendance(${subject.id})">📤 Upload Attendance</button>
+                        ` : `
+                            <div class="type-buttons">
+                                <button class="type-btn" onclick="selectType(${subject.id}, 'Lab')">Lab</button>
+                                <button class="type-btn" onclick="selectType(${subject.id}, 'Theory')">Theory</button>
+                            </div>
+                            <button class="upload-btn-card" id="uploadBtn-${subject.id}" onclick="uploadAttendance(${subject.id})">📤 Upload Attendance</button>
+                        `}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function getSubjectIcon(name) {
+
+            const subject = name.toLowerCase();
+
+            if(subject.includes("data")) return "💻";
+            if(subject.includes("network")) return "🌐";
+            if(subject.includes("math")) return "📐";
+            if(subject.includes("ai")) return "🤖";
+            if(subject.includes("Database")) return "🗄️";
+
+            return "📘"; 
+        }
+
+        async function loadSubjects() {
+
+            const response = await fetch("http://127.0.0.1:5000/get_subjects");
+            const subjects = await response.json();
+
+            // Convert DB format → your UI format
+            allSubjects = subjects.map((s, index) => ({
+                id: s.id,
+                name: s.subject_name,
+                code: s.subject_code,
+                students: s.student_count,
+                category: (s.subject_category || 'course').toLowerCase(),
+                icon: getSubjectIcon(s.subject_name)
+            }));
+
+            filteredSubjects = [...allSubjects];
+
+            displaySubjects(filteredSubjects);
+        }
+
+        // Select Lab or Theory type
+        function selectType(subjectId, type) {
+            const subject = allSubjects.find(s => s.id === subjectId);
+            const uploadBtn = document.getElementById(`uploadBtn-${subjectId}`);
+            const buttons = uploadBtn.parentElement.querySelectorAll('.type-btn');
+
+            // Remove active class from all buttons in this card
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+
+            // Show upload button
+            uploadBtn.classList.add('show');
+
+            // Store selected subject and type
+            uploadBtn.dataset.selectedType = type;
+            uploadBtn.dataset.selectedSubject = subject.name;
+        }
+
+        // Upload attendance
+        function uploadAttendance(subjectId) {
+            const uploadBtn = document.getElementById(`uploadBtn-${subjectId}`);
+            const type = uploadBtn.dataset.selectedType;
+            const subjectName = uploadBtn.dataset.selectedSubject;
+
+            if (!type) {
+                alert('Please select Lab or Theory first before uploading attendance.');
+                return;
+            }
+
+            // Store selected subject and type
+            localStorage.setItem('selectedSubject', subjectName);
+            localStorage.setItem('selectedType', type);
+
+            // Redirect to attendance marking page
+            setTimeout(() => {
+                window.location.href = `teachpage2.html?subject_id=${subjectId}&subject=${encodeURIComponent(subjectName)}&type=${encodeURIComponent(type)}`;
+            }, 300);
+        }
+
+        // Search subjects
+        function searchSubjects() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            filteredSubjects = allSubjects.filter(subject => 
+                subject.name.toLowerCase().includes(searchTerm) ||
+                subject.code.toLowerCase().includes(searchTerm)
+            );
+
+            displaySubjects(filteredSubjects);
+        }
+
+        // Add Subject Modal Functions
+        function addSubject() {
+            document.getElementById('addSubjectModal').classList.add('show');
+            document.getElementById('subjectName').focus();
+        }
+
+        function closeAddSubjectModal() {
+            document.getElementById('addSubjectModal').classList.remove('show');
+            document.getElementById('subjectName').value = '';
+            document.getElementById('subjectCode').value = '';
+            document.getElementById('studentCount').value = '';
+            // Reset category radio buttons
+            document.querySelectorAll('input[name="subject_category"]').forEach(r => r.checked = false);
+        }
+
+
+        async function submitAddSubject(event) {
+            event.preventDefault();
+
+            const subjectName = document.getElementById("subjectName").value;
+            const subjectCode = document.getElementById("subjectCode").value;
+            const studentCount = document.getElementById("studentCount").value;
+            const categoryRadio = document.querySelector('input[name="subject_category"]:checked');
+
+            if (!categoryRadio) {
+                alert("Please select a subject category (Course Subject or Language).");
+                return;
+            }
+
+            const subjectCategory = categoryRadio.value;
+
+            const response = await fetch("http://127.0.0.1:5000/add_subject", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    subject_name: subjectName,
+                    subject_code: subjectCode,
+                    student_count: studentCount,
+                    subject_category: subjectCategory
+                })
+            });
+            const data = await response.json();
+
+            closeAddSubjectModal();
+
+            await loadSubjects(); 
+        }
+
+        // Delete Subject Modal Functions
+        function deleteSubject() {
+            // Populate subject dropdown
+            const selectElement = document.getElementById('subjectSelectDelete');
+            selectElement.innerHTML = '<option value="">Choose a subject...</option>';
+            
+            allSubjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject.id;
+                option.textContent = `${subject.name} (${subject.code})`;
+                selectElement.appendChild(option);
+            });
+            
+            document.getElementById('deleteSubjectModal').classList.add('show');
+            // selectElement.focus();
+        }
+
+        function closeDeleteSubjectModal() {
+            document.getElementById('deleteSubjectModal').classList.remove('show');
+            document.getElementById('subjectSelectDelete').value = '';
+        }
+
+    
+        async function confirmDeleteSubject() {
+
+            const selectElement = document.getElementById("subjectSelectDelete");
+            const selectedId = selectElement.value;
+
+            if (!selectedId || selectedId === "") {
+                alert("Please select a subject to delete");
+                return;
+            }
+
+            const subjectToDelete = allSubjects.find(s => s.id == selectedId);
+
+            if (!subjectToDelete) {
+                alert("Subject not found");
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete "${subjectToDelete.name}"?`)) {
+
+                try {
+                    const response = await fetch(`http://127.0.0.1:5000/delete_subject/${selectedId}`, {
+                        method: "DELETE"
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        alert(`Error: ${data.error || data.message || 'Failed to delete subject'}`);
+                        return;
+                    }
+
+                    alert(`Subject "${subjectToDelete.name}" deleted successfully`);
+                    closeDeleteSubjectModal();
+                    await loadSubjects();
+                } catch (error) {
+                    console.error("Delete error:", error);
+                    alert(`Error deleting subject: ${error.message}`);
+                }
+            }
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            const addModal = document.getElementById('addSubjectModal');
+            const deleteModal = document.getElementById('deleteSubjectModal');
+            if (event.target === addModal) {
+                closeAddSubjectModal();
+            }
+            if (event.target === deleteModal) {
+                closeDeleteSubjectModal();
+            }
+        });
+
+        // Load on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadTeacherInfo();
+            loadSubjects();
+        });
+    </script>
+</body>
+</html>
