@@ -512,7 +512,7 @@
             document.getElementById('resultsContent').innerHTML = loadingHTML();
 
             try {
-                const res = await fetch(`http://127.0.0.1:5000/get_students_by_year?year=${year}`);
+                const res = await fetch(`https://attendance-system-kwds.onrender.com/get_students_by_year?year=${year}`);
                 const students = await res.json();
                 document.getElementById('resultsCount').textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
                 renderStudentList(students);
@@ -581,7 +581,7 @@
             document.getElementById('resultsContent').innerHTML = loadingHTML();
 
             try {
-                const res = await fetch(`http://127.0.0.1:5000/get_attendance_matrix?year=${encodeURIComponent(year)}&class_type=${encodeURIComponent(currentTypeFilter)}`);
+                const res = await fetch(`https://attendance-system-kwds.onrender.com/get_attendance_matrix?year=${encodeURIComponent(year)}&class_type=${encodeURIComponent(currentTypeFilter)}`);
                 const data = await res.json();
                 document.getElementById('resultsCount').textContent = `${data.students.length} student${data.students.length !== 1 ? 's' : ''}, ${data.subjects.length} subject${data.subjects.length !== 1 ? 's' : ''}`;
                 renderMatrix(data);
@@ -699,7 +699,7 @@
             closeDeleteModal();
 
             try {
-                const res = await fetch(`http://127.0.0.1:5000/delete_student/${idToDelete}`, { method: 'DELETE' });
+                const res = await fetch(`https://attendance-system-kwds.onrender.com/delete_student/${idToDelete}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (res.ok) {
                     showToast(`✅ "${nameToDelete}" deleted successfully`, 'success');
@@ -780,7 +780,7 @@
             text.style.color = '#888';
             text.textContent = '⏳ Loading...';
             try {
-                const res  = await fetch('http://127.0.0.1:5000/promotion_status');
+                const res  = await fetch('https://attendance-system-kwds.onrender.com/promotion_status');
                 const data = await res.json();
                 toggle.checked  = data.enabled;
                 toggle.disabled = false;
@@ -802,7 +802,7 @@
             statusEl.style.color = '#667eea';
             statusEl.textContent = 'Saving...';
             try {
-                const res  = await fetch('http://127.0.0.1:5000/set_promotion_status', {
+                const res  = await fetch('https://attendance-system-kwds.onrender.com/set_promotion_status', {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body:    JSON.stringify({ enabled })

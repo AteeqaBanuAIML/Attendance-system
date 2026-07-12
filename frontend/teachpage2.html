@@ -901,7 +901,7 @@
 
             try {
                 const res = await fetch(
-                    `http://127.0.0.1:5000/get_class_dates/${subjectId}?class_type=${encodeURIComponent(selectedClassType)}`
+                    `https://attendance-system-kwds.onrender.com/get_class_dates/${subjectId}?class_type=${encodeURIComponent(selectedClassType)}`
                 );
                 const dates = await res.json();
                 classDatesSet = new Set(dates);
@@ -1069,7 +1069,7 @@
             const params = new URLSearchParams(window.location.search);
             const subjectId = params.get('subject_id');
 
-            const response = await fetch(`http://127.0.0.1:5000/get_students_by_subject/${subjectId}`);
+            const response = await fetch(`https://attendance-system-kwds.onrender.com/get_students_by_subject/${subjectId}`);
             const data = await response.json();
 
             students = data.map(stu => ({
@@ -1093,7 +1093,7 @@
             const params = new URLSearchParams(window.location.search);
             const subjectId = params.get('subject_id');
             
-            const response = await fetch(`http://127.0.0.1:5000/get_attendance_by_date/${subjectId}/${date}?class_type=${encodeURIComponent(selectedClassType)}`);
+            const response = await fetch(`https://attendance-system-kwds.onrender.com/get_attendance_by_date/${subjectId}/${date}?class_type=${encodeURIComponent(selectedClassType)}`);
             const existingData = await response.json();
             
             attendanceData = {};
@@ -1208,7 +1208,7 @@
             }
 
             try {
-                const submitRes = await fetch("http://127.0.0.1:5000/submit_attendance", {
+                const submitRes = await fetch("https://attendance-system-kwds.onrender.com/submit_attendance", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

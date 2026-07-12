@@ -449,7 +449,7 @@
                     return;
                 }
                 // Backend validation for student
-                fetch('http://127.0.0.1:5000/student_login', {
+                fetch('https://attendance-system-kwds.onrender.com/student_login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name, reg_number: identifier })
@@ -498,7 +498,7 @@
                 }
 
                 // Password correct — save name+email to teachers table and grant access
-                fetch('http://127.0.0.1:5000/teacher_login', {
+                fetch('https://attendance-system-kwds.onrender.com/teacher_login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email })

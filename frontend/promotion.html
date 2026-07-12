@@ -264,7 +264,7 @@
         document.getElementById('step1').style.display = 'none';
         document.getElementById('disabledScreen').style.display = 'none';
         try {
-            const res  = await fetch('http://127.0.0.1:5000/promotion_status');
+            const res  = await fetch('https://attendance-system-kwds.onrender.com/promotion_status');
             const data = await res.json();
             if (!data.enabled) {
                 // Hide step indicator + show locked screen
@@ -310,7 +310,7 @@
         btn.textContent = 'Verifying...';
 
         try {
-            const res  = await fetch('http://127.0.0.1:5000/verify_promotion', {
+            const res  = await fetch('https://attendance-system-kwds.onrender.com/verify_promotion', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body:    JSON.stringify({ name, reg_number: reg })
@@ -339,7 +339,7 @@
         const container = document.getElementById('subjectsContainer');
         container.innerHTML = '<p style="color:#999;font-size:13px;text-align:center;grid-column:1/-1;">Loading subjects...</p>';
         try {
-            const res      = await fetch('http://127.0.0.1:5000/get_subjects');
+            const res      = await fetch('https://attendance-system-kwds.onrender.com/get_subjects');
             const subjects = await res.json();
             container.innerHTML = '';
 
@@ -376,7 +376,7 @@
         btn.textContent = 'Processing...';
 
         try {
-            const res  = await fetch('http://127.0.0.1:5000/promote_student', {
+            const res  = await fetch('https://attendance-system-kwds.onrender.com/promote_student', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body:    JSON.stringify({ student_id: verifiedStudent.id, new_subjects: selected })
