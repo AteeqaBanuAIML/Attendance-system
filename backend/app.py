@@ -46,7 +46,8 @@ def ensure_schema():
         # Column migrations
         migrations = [
             "ALTER TABLE attendance ADD COLUMN class_type VARCHAR(20) DEFAULT 'Theory';",
-            "ALTER TABLE subjects ADD COLUMN subject_category VARCHAR(20) DEFAULT 'course';"
+            "ALTER TABLE subjects ADD COLUMN subject_category VARCHAR(20) DEFAULT 'course';",
+            "ALTER TABLE students ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active';"
         ]
         for sql in migrations:
             try:
@@ -237,7 +238,7 @@ def get_students_by_subject(subject_id):
     SELECT s.id, s.name, s.reg_number 
     FROM students s
     JOIN student_subjects ss ON s.id = ss.student_id
-    WHERE ss.subject_id = %s
+    WHERE ss.subject_id = %s AND s.status = 'active'
     ORDER BY LENGTH(s.reg_number), s.reg_number
     """
     cursor.execute(query, (subject_id,))
@@ -573,9 +574,9 @@ def get_students_by_year():
     db = get_db_connection()
     cursor = db.cursor()
 
-    # Query 1: all students for the year
+    # Query 1: all active students for the year
     cursor.execute(
-        "SELECT id, name, reg_number FROM students WHERE year = %s ORDER BY LENGTH(reg_number), reg_number",
+        "SELECT id, name, reg_number FROM students WHERE year = %s AND status = 'active' ORDER BY LENGTH(reg_number), reg_number",
         (year,)
     )
     student_rows = cursor.fetchall()
@@ -638,9 +639,9 @@ def get_attendance_matrix():
     db = get_db_connection()
     cursor = db.cursor()
 
-    # ── Query 1: students ────────────────────────────────────────────────────
+    # ── Query 1: active students ─────────────────────────────────────────────
     cursor.execute(
-        "SELECT id, name, reg_number FROM students WHERE year = %s ORDER BY LENGTH(reg_number), reg_number",
+        "SELECT id, name, reg_number FROM students WHERE year = %s AND status = 'active' ORDER BY LENGTH(reg_number), reg_number",
         (year,)
     )
     student_rows = cursor.fetchall()
@@ -1080,6 +1081,150 @@ def promote_student():
         cursor.close()
         db.close()
         return jsonify({"success": True, "message": f"Successfully promoted to {next_year}."})
+
+    except mysql.connector.Error as e:
+        db.rollback()
+        cursor.close()
+        db.close()
+        return jsonify({"success": False, "message": f"Database error: {str(e)}"})
+
+
+@app.route('/passout_all_3rd_year', methods=['POST'])
+def passout_all_3rd_year():
+    """
+    Bulk pass out: marks ALL active 3rd-year students as passed out.
+    For each student:
+      - Snapshots their subjects into enrollment_history.
+      - Sets status = 'passout'.
+      - Clears their active subject enrolments (attendance history kept).
+    Returns the count of students processed.
+    """
+    db     = get_db_connection()
+    cursor = db.cursor()
+
+    try:
+        # Ensure enrollment_history table exists
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS enrollment_history (
+                id          INT AUTO_INCREMENT PRIMARY KEY,
+                student_id  INT         NOT NULL,
+                subject_id  INT         NOT NULL,
+                year        VARCHAR(50) NOT NULL,
+                promoted_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # Get all active 3rd year students
+        cursor.execute(
+            "SELECT id FROM students WHERE status = 'active' AND year = '3rd year'"
+        )
+        student_ids = [row[0] for row in cursor.fetchall()]
+
+        if not student_ids:
+            cursor.close(); db.close()
+            return jsonify({"success": True, "count": 0,
+                            "message": "No active 3rd year students found."})
+
+        for student_id in student_ids:
+            # Snapshot subjects to history
+            cursor.execute(
+                "SELECT subject_id FROM student_subjects WHERE student_id = %s",
+                (student_id,)
+            )
+            for row in cursor.fetchall():
+                cursor.execute(
+                    "INSERT INTO enrollment_history (student_id, subject_id, year) VALUES (%s, %s, '3rd year')",
+                    (student_id, row[0])
+                )
+            # Mark passout and clear enrolments
+            cursor.execute(
+                "UPDATE students SET status = 'passout' WHERE id = %s", (student_id,)
+            )
+            cursor.execute(
+                "DELETE FROM student_subjects WHERE student_id = %s", (student_id,)
+            )
+
+        db.commit()
+        cursor.close()
+        db.close()
+        return jsonify({"success": True, "count": len(student_ids),
+                        "message": f"{len(student_ids)} student(s) marked as passed out."})
+
+    except mysql.connector.Error as e:
+        db.rollback()
+        cursor.close()
+        db.close()
+        return jsonify({"success": False, "message": f"Database error: {str(e)}"})
+
+
+@app.route('/passout_student', methods=['POST'])
+def passout_student():
+    """
+    Mark a 3rd-year student as passed out.
+    - Saves their current subjects to enrollment_history (same as promotion).
+    - Sets status = 'passout' so they are hidden from all teacher-facing views.
+    - Clears their active subject enrolments (attendance history is kept).
+    - Student login and history views still work normally.
+    """
+    data       = request.json
+    student_id = data.get('student_id')
+
+    if not student_id:
+        return jsonify({"success": False, "message": "Student ID is required."})
+
+    db     = get_db_connection()
+    cursor = db.cursor()
+
+    try:
+        # Verify student exists and is in 3rd year
+        cursor.execute("SELECT year, status FROM students WHERE id = %s", (student_id,))
+        row = cursor.fetchone()
+        if not row:
+            cursor.close(); db.close()
+            return jsonify({"success": False, "message": "Student not found."})
+
+        current_year = normalize_year(row[0])
+        current_status = row[1]
+
+        if current_status == 'passout':
+            cursor.close(); db.close()
+            return jsonify({"success": False, "message": "Student is already marked as passed out."})
+
+        if current_year != '3rd year':
+            cursor.close(); db.close()
+            return jsonify({"success": False, "message": "Only 3rd year students can be marked as passed out."})
+
+        # Ensure enrollment_history table exists
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS enrollment_history (
+                id          INT AUTO_INCREMENT PRIMARY KEY,
+                student_id  INT         NOT NULL,
+                subject_id  INT         NOT NULL,
+                year        VARCHAR(50) NOT NULL,
+                promoted_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # Snapshot current subjects into enrollment_history
+        cursor.execute(
+            "SELECT subject_id FROM student_subjects WHERE student_id = %s",
+            (student_id,)
+        )
+        old_subject_ids = [r[0] for r in cursor.fetchall()]
+        for sub_id in old_subject_ids:
+            cursor.execute(
+                "INSERT INTO enrollment_history (student_id, subject_id, year) VALUES (%s, %s, %s)",
+                (student_id, sub_id, '3rd year')
+            )
+
+        # Mark as passout and clear active enrolments
+        cursor.execute("UPDATE students SET status = 'passout' WHERE id = %s", (student_id,))
+        cursor.execute("DELETE FROM student_subjects WHERE student_id = %s", (student_id,))
+
+        db.commit()
+        cursor.close()
+        db.close()
+        return jsonify({"success": True, "message": "Student marked as passed out successfully."})
 
     except mysql.connector.Error as e:
         db.rollback()

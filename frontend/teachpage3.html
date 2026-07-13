@@ -319,6 +319,18 @@
         .btn-confirm-cancel { background: #ebebeb; color: #444; }
         .btn-confirm-cancel:hover { background: #d8d8d8; }
         .btn-confirm-del:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-confirm-passout { background: linear-gradient(135deg, #764ba2, #667eea); color: white; }
+        .btn-confirm-passout:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(118,75,162,0.35); }
+        .btn-confirm-passout:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+        /* Pass Out action button inside student table row */
+        .passout-btn {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            color: white; border: none; padding: 6px 12px;
+            border-radius: 6px; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+            white-space: nowrap;
+        }
+        .passout-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(118,75,162,0.4); }
 
         /* Toast notification */
         .toast {
@@ -439,6 +451,17 @@
                     📈 View Attendance Overview
                 </button>
             </div>
+            <!-- Pass Out banner — only visible when 3rd year is selected -->
+            <div id="passoutBanner" style="display:none;margin-top:16px;padding:14px 18px;background:linear-gradient(135deg,#f3e8ff,#ede9fe);border:2px solid #c4b5fd;border-radius:12px;display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:14px;font-weight:700;color:#5b21b6;">🎓 End of Academic Year</div>
+                    <div style="font-size:12px;color:#7c3aed;margin-top:2px;">Mark all active 3rd year students as passed out. Their attendance history is preserved.</div>
+                </div>
+                <button id="btnPassoutAll" onclick="askPassoutAll()"
+                    style="background:linear-gradient(135deg,#764ba2,#667eea);color:white;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:inherit;white-space:nowrap;">
+                    🎓 Pass Out All 3rd Year Students
+                </button>
+            </div>
         </div>
 
         <!-- Results Section -->
@@ -472,6 +495,23 @@
         </div>
     </div>
 
+    <!-- Pass Out Confirm Modal -->
+    <div class="modal-overlay" id="passoutModal">
+        <div class="modal-box">
+            <div style="text-align:center;font-size:48px;margin-bottom:12px;">🎓</div>
+            <h3 style="color:#764ba2;">Pass Out All 3rd Year Students</h3>
+            <p id="passoutMsg">Are you sure? All active 3rd year students will be marked as passed out.</p>
+            <p style="font-size:12px;color:#888;margin-top:8px;">
+                ✅ Attendance history is preserved — students can still view it.<br>
+                ✅ They will no longer appear in teacher records.
+            </p>
+            <div class="modal-actions">
+                <button class="btn-confirm-passout" onclick="confirmPassoutAll()">🎓 Yes, Pass Out All</button>
+                <button class="btn-confirm-cancel" onclick="closePassoutModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
@@ -482,6 +522,9 @@
                 window.location.replace('page1.html');
             }
         })();
+
+        // ── API base URL ──────
+        const API = 'https://attendance-system-backend-tdbg.onrender.com';
 
         let currentView = null;         // 'students' | 'attendance'
         let currentTypeFilter = 'All';   // 'All' | 'Theory' | 'Lab'
@@ -495,6 +538,12 @@
         function setActiveBtn(which) {
             document.getElementById('btnStudents').classList.toggle('active-view', which === 'students');
             document.getElementById('btnAttendance').classList.toggle('active-view', which === 'attendance');
+        }
+
+        // Show/hide the Pass Out banner based on selected year
+        function updatePassoutBanner() {
+            const banner = document.getElementById('passoutBanner');
+            banner.style.display = (getYear() === '3rd year') ? 'flex' : 'none';
         }
 
         // ── STUDENT LIST VIEW ────────────────────────────────────────────────
@@ -512,18 +561,24 @@
             document.getElementById('resultsContent').innerHTML = loadingHTML();
 
             try {
-                const res = await fetch(`https://attendance-system-backend-tdbg.onrender.com/get_students_by_year?year=${year}`);
+                const res = await fetch(`${API}/get_students_by_year?year=${year}`);
                 const students = await res.json();
                 document.getElementById('resultsCount').textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
-                renderStudentList(students);
+                renderStudentList(students, year);
             } catch(e) {
                 document.getElementById('resultsContent').innerHTML = errorHTML('Could not load students. Is the backend running?');
             }
         }
 
-        function renderStudentList(students) {
+        function renderStudentList(students, year) {
+            const is3rdYear = (year === '3rd year');
+
             if (students.length === 0) {
-                document.getElementById('resultsContent').innerHTML = emptyHTML('No students registered for this year.');
+                document.getElementById('resultsContent').innerHTML = emptyHTML(
+                    is3rdYear
+                        ? 'No active 3rd year students. All may have been passed out already.'
+                        : 'No students registered for this year.'
+                );
                 return;
             }
 
@@ -539,9 +594,7 @@
                     <td style="font-weight:600; color:#333;">${s.name}</td>
                     <td><div class="subject-tags">${subjectTags}</div></td>
                     <td>
-                        <button class="delete-btn" onclick="askDelete(${s.id}, '${s.name.replace(/'/g,"\\'")}')">
-                            🗑️ Delete
-                        </button>
+                        <button class="delete-btn" onclick="askDelete(${s.id}, '${s.name.replace(/'/g,"\\'")}')">🗑️ Delete</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -581,7 +634,7 @@
             document.getElementById('resultsContent').innerHTML = loadingHTML();
 
             try {
-                const res = await fetch(`https://attendance-system-backend-tdbg.onrender.com/get_attendance_matrix?year=${encodeURIComponent(year)}&class_type=${encodeURIComponent(currentTypeFilter)}`);
+                const res = await fetch(`${API}/get_attendance_matrix?year=${encodeURIComponent(year)}&class_type=${encodeURIComponent(currentTypeFilter)}`);
                 const data = await res.json();
                 document.getElementById('resultsCount').textContent = `${data.students.length} student${data.students.length !== 1 ? 's' : ''}, ${data.subjects.length} subject${data.subjects.length !== 1 ? 's' : ''}`;
                 renderMatrix(data);
@@ -699,7 +752,7 @@
             closeDeleteModal();
 
             try {
-                const res = await fetch(`https://attendance-system-backend-tdbg.onrender.com/delete_student/${idToDelete}`, { method: 'DELETE' });
+                const res = await fetch(`${API}/delete_student/${idToDelete}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (res.ok) {
                     showToast(`✅ "${nameToDelete}" deleted successfully`, 'success');
@@ -712,6 +765,43 @@
             } finally {
                 delBtn.disabled = false;
                 delBtn.textContent = 'Yes, Delete';
+            }
+        }
+
+        // ── PASS OUT ALL FLOW ─────────────────────────────────────────────────
+        function askPassoutAll() {
+            document.getElementById('passoutMsg').textContent =
+                'Mark ALL active 3rd year students as passed out? They will be removed from teacher records but can still view their attendance history from the student dashboard.';
+            document.getElementById('passoutModal').classList.add('show');
+        }
+
+        function closePassoutModal() {
+            document.getElementById('passoutModal').classList.remove('show');
+        }
+
+        async function confirmPassoutAll() {
+            const btn = document.querySelector('.btn-confirm-passout');
+            btn.disabled    = true;
+            btn.textContent = 'Processing...';
+            closePassoutModal();
+
+            try {
+                const res  = await fetch(`${API}/passout_all_3rd_year`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`🎓 ${data.count} student(s) marked as passed out!`, 'success');
+                    showStudents();
+                } else {
+                    showToast('❌ ' + (data.message || 'Could not process pass out.'), 'error');
+                }
+            } catch(e) {
+                showToast('❌ Network error. Is the backend running?', 'error');
+            } finally {
+                btn.disabled    = false;
+                btn.textContent = '🎓 Yes, Pass Out All';
             }
         }
 
@@ -732,15 +822,22 @@
             return `<div class="empty-state"><div class="icon">⚠️</div>${msg}</div>`;
         }
 
-        // Re-run current view when year changes
+        // Re-run current view when year changes; also toggle passout banner
         document.getElementById('yearSelect').addEventListener('change', () => {
+            updatePassoutBanner();
             if (currentView === 'students') showStudents();
             else if (currentView === 'attendance') showAttendance();
         });
 
+        // Run once on load to set initial banner state
+        updatePassoutBanner();
+
         // Close modal on outside click
         document.getElementById('deleteModal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('deleteModal')) closeDeleteModal();
+        });
+        document.getElementById('passoutModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('passoutModal')) closePassoutModal();
         });
     </script>
 
@@ -780,7 +877,7 @@
             text.style.color = '#888';
             text.textContent = '⏳ Loading...';
             try {
-                const res  = await fetch('https://attendance-system-backend-tdbg.onrender.com/promotion_status');
+                const res  = await fetch(`${API}/promotion_status`);
                 const data = await res.json();
                 toggle.checked  = data.enabled;
                 toggle.disabled = false;
@@ -802,7 +899,7 @@
             statusEl.style.color = '#667eea';
             statusEl.textContent = 'Saving...';
             try {
-                const res  = await fetch('https://attendance-system-backend-tdbg.onrender.com/set_promotion_status', {
+                const res  = await fetch(`${API}/set_promotion_status`, {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body:    JSON.stringify({ enabled })
