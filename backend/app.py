@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import mysql.connector
+from mysql.connector import pooling
 import os
 
 app = Flask(__name__)
@@ -10,23 +11,30 @@ CORS(app, resources={r"/*": {"origins": ["null", "http://localhost:5500", "http:
      allow_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
-# def get_db_connection():
-#     return mysql.connector.connect(
-#         host="localhost",
-#         user="root",
-#         password="n#1728",
-#         database="attendance_system"
-#     )
+# ── Connection Pool ──────────────────────────────────────────────────────────
+# Keeps 5 reusable connections open to Aiven instead of opening a new TCP
+# handshake+SSL on every request. Dramatically reduces per-request latency.
+_pool = None
+
+def _get_pool():
+    global _pool
+    if _pool is None:
+        _pool = pooling.MySQLConnectionPool(
+            pool_name="attendance_pool",
+            pool_size=5,
+            pool_reset_session=True,
+            host=os.getenv("DB_HOST"),
+            port=int(os.getenv("DB_PORT", 3306)),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
+            ssl_ca="ca.pem"
+        )
+    return _pool
 
 def get_db_connection():
-    return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        port=int(os.getenv("DB_PORT")),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-        ssl_ca="ca.pem"
-    )
+    """Return a connection from the pool (thread-safe, fast)."""
+    return _get_pool().get_connection()
 
 # Ensure schema has required columns.
 schema_ready = False
@@ -557,45 +565,60 @@ def get_student_calendar(reg_number, subject_id):
 
 @app.route('/get_students_by_year', methods=['GET'])
 def get_students_by_year():
-    """Return all students of a given year along with their enrolled subjects."""
+    """Return all students of a given year along with their enrolled subjects.
+    Uses 2 bulk queries instead of N+1 queries.
+    """
     year = request.args.get('year', '1')
 
     db = get_db_connection()
     cursor = db.cursor()
 
-    # Fetch students of that year
+    # Query 1: all students for the year
     cursor.execute(
         "SELECT id, name, reg_number FROM students WHERE year = %s ORDER BY LENGTH(reg_number), reg_number",
         (year,)
     )
     student_rows = cursor.fetchall()
 
+    if not student_rows:
+        cursor.close()
+        db.close()
+        return jsonify([])
+
+    student_ids = [r[0] for r in student_rows]
+    fmt = ','.join(['%s'] * len(student_ids))
+
+    # Query 2: all subjects for ALL those students in one shot
+    cursor.execute(
+        f"""SELECT ss.student_id, sub.id, sub.subject_name, sub.subject_code
+            FROM subjects sub
+            JOIN student_subjects ss ON ss.subject_id = sub.id
+            WHERE ss.student_id IN ({fmt})
+            ORDER BY sub.subject_name""",
+        student_ids
+    )
+    # Group subjects by student_id
+    subjects_by_student = {}
+    for row in cursor.fetchall():
+        sid, sub_id, sub_name, sub_code = row
+        subjects_by_student.setdefault(sid, []).append(
+            {"id": sub_id, "subject_name": sub_name, "subject_code": sub_code}
+        )
+
+    cursor.close()
+    db.close()
+
     result = []
     for idx, stu in enumerate(student_rows):
         student_id, name, reg_number = stu
-
-        # Fetch enrolled subjects for this student
-        cursor.execute(
-            """SELECT sub.id, sub.subject_name, sub.subject_code
-               FROM subjects sub
-               JOIN student_subjects ss ON ss.subject_id = sub.id
-               WHERE ss.student_id = %s
-               ORDER BY sub.subject_name""",
-            (student_id,)
-        )
-        subject_rows = cursor.fetchall()
-        subjects = [{"id": r[0], "subject_name": r[1], "subject_code": r[2]} for r in subject_rows]
-
         result.append({
             "serial": idx + 1,
             "id": student_id,
             "name": name,
             "reg_number": reg_number,
-            "subjects": subjects
+            "subjects": subjects_by_student.get(student_id, [])
         })
 
-    cursor.close()
-    db.close()
     return jsonify(result)
 
 
@@ -605,6 +628,9 @@ def get_attendance_matrix():
     Return a matrix of attendance percentages:
     rows = students of a given year, columns = subjects they are enrolled in.
     class_type filter: 'All' (default) combines theory+lab; 'Theory' or 'Lab' shows only that type.
+
+    OPTIMIZED: Uses 3 bulk GROUP BY queries instead of (students x subjects x 5) queries.
+    For 60 students x 8 subjects this reduces ~2400 DB round-trips down to 3.
     """
     year = request.args.get('year', '1')
     class_type_filter = request.args.get('class_type', 'All')  # 'All' | 'Theory' | 'Lab'
@@ -612,7 +638,7 @@ def get_attendance_matrix():
     db = get_db_connection()
     cursor = db.cursor()
 
-    # All students of this year
+    # ── Query 1: students ────────────────────────────────────────────────────
     cursor.execute(
         "SELECT id, name, reg_number FROM students WHERE year = %s ORDER BY LENGTH(reg_number), reg_number",
         (year,)
@@ -624,12 +650,9 @@ def get_attendance_matrix():
         return jsonify({"subjects": [], "students": []})
 
     student_ids = [r[0] for r in student_rows]
-
-    # All distinct subjects enrolled by at least one student in this year.
-    # When a specific class_type is selected, only include subjects that actually
-    # have attendance records for that type (e.g. languages never have Lab records,
-    # so they are excluded from the "Lab Only" view automatically).
     fmt = ','.join(['%s'] * len(student_ids))
+
+    # ── Query 2: subjects ────────────────────────────────────────────────────
     if class_type_filter in ('Theory', 'Lab'):
         cursor.execute(
             f"""SELECT DISTINCT sub.id, sub.subject_name, sub.subject_code
@@ -638,8 +661,7 @@ def get_attendance_matrix():
                 WHERE ss.student_id IN ({fmt})
                 AND EXISTS (
                     SELECT 1 FROM attendance a
-                    WHERE a.subject_id = sub.id
-                    AND a.class_type = %s
+                    WHERE a.subject_id = sub.id AND a.class_type = %s
                 )
                 ORDER BY sub.subject_name""",
             student_ids + [class_type_filter]
@@ -657,7 +679,66 @@ def get_attendance_matrix():
     subjects = [{"id": r[0], "subject_name": r[1], "subject_code": r[2]} for r in subject_rows]
     subject_ids = [s["id"] for s in subjects]
 
+    if not subject_ids:
+        cursor.close()
+        db.close()
+        return jsonify({"subjects": [], "students": []})
 
+    sub_fmt = ','.join(['%s'] * len(subject_ids))
+
+    # ── Query 3a: enrollment map (student_id -> set of subject_ids) ──────────
+    cursor.execute(
+        f"SELECT student_id, subject_id FROM student_subjects"
+        f" WHERE student_id IN ({fmt}) AND subject_id IN ({sub_fmt})",
+        student_ids + subject_ids
+    )
+    enrolled_set = set()
+    for row in cursor.fetchall():
+        enrolled_set.add((row[0], row[1]))
+
+    # ── Query 3b: bulk attendance totals per (subject_id, class_type) ────────
+    # total classes held (distinct dates) per subject+class_type
+    if class_type_filter == 'All':
+        ct_condition = "class_type IN ('Theory', 'Lab')"
+        ct_params = []
+    else:
+        ct_condition = "class_type = %s"
+        ct_params = [class_type_filter]
+
+    cursor.execute(
+        f"""SELECT subject_id, class_type,
+                   COUNT(DISTINCT date)                                       AS total_classes,
+                   SUM(CASE WHEN student_id IN ({fmt}) AND status='present' THEN 1 ELSE 0 END) AS dummy
+            FROM attendance
+            WHERE subject_id IN ({sub_fmt}) AND {ct_condition}
+            GROUP BY subject_id, class_type""",
+        student_ids + subject_ids + ct_params
+    )
+    # total_classes_map: (subject_id, class_type) -> total_distinct_dates
+    total_classes_map = {}
+    for row in cursor.fetchall():
+        total_classes_map[(row[0], row[1])] = row[2]
+
+    # ── Query 3c: per-student attended counts ────────────────────────────────
+    cursor.execute(
+        f"""SELECT student_id, subject_id, class_type, COUNT(*) AS attended
+            FROM attendance
+            WHERE student_id IN ({fmt})
+              AND subject_id IN ({sub_fmt})
+              AND status = 'present'
+              AND {ct_condition}
+            GROUP BY student_id, subject_id, class_type""",
+        student_ids + subject_ids + ct_params
+    )
+    # attended_map: (student_id, subject_id, class_type) -> count
+    attended_map = {}
+    for row in cursor.fetchall():
+        attended_map[(row[0], row[1], row[2])] = row[3]
+
+    cursor.close()
+    db.close()
+
+    # ── Assemble response entirely in Python (no more DB calls) ─────────────
     students_data = []
     for stu in student_rows:
         student_id, name, reg_number = stu
@@ -666,54 +747,23 @@ def get_attendance_matrix():
         for sub in subjects:
             sub_id = sub["id"]
 
-            theory_total    = 0
-            theory_attended = 0
-            lab_total       = 0
-            lab_attended    = 0
+            if (student_id, sub_id) not in enrolled_set:
+                attendance_by_subject[sub_id] = None
+                continue
 
-            if class_type_filter in ('All', 'Theory'):
-                # Theory totals
-                cursor.execute(
-                    "SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = %s AND class_type = 'Theory'",
-                    (sub_id,)
-                )
-                theory_total = cursor.fetchone()[0] or 0
+            class_types = [class_type_filter] if class_type_filter != 'All' else ['Theory', 'Lab']
+            total_classes  = 0
+            total_attended = 0
+            for ct in class_types:
+                total_classes  += total_classes_map.get((sub_id, ct), 0)
+                total_attended += attended_map.get((student_id, sub_id, ct), 0)
 
-                cursor.execute(
-                    "SELECT COUNT(*) FROM attendance WHERE subject_id = %s AND student_id = %s AND status = 'present' AND class_type = 'Theory'",
-                    (sub_id, student_id)
-                )
-                theory_attended = cursor.fetchone()[0] or 0
-
-            if class_type_filter in ('All', 'Lab'):
-                # Lab totals
-                cursor.execute(
-                    "SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = %s AND class_type = 'Lab'",
-                    (sub_id,)
-                )
-                lab_total = cursor.fetchone()[0] or 0
-
-                cursor.execute(
-                    "SELECT COUNT(*) FROM attendance WHERE subject_id = %s AND student_id = %s AND status = 'present' AND class_type = 'Lab'",
-                    (sub_id, student_id)
-                )
-                lab_attended = cursor.fetchone()[0] or 0
-
-            total_classes  = theory_total + lab_total
-            total_attended = theory_attended + lab_attended
-
-            # Check if student is enrolled in this subject
-            cursor.execute(
-                "SELECT 1 FROM student_subjects WHERE student_id = %s AND subject_id = %s",
-                (student_id, sub_id)
-            )
-            enrolled = cursor.fetchone() is not None
-
-            if enrolled:
-                pct = int(total_attended / total_classes * 100) if total_classes > 0 else 0
-                attendance_by_subject[sub_id] = {"percentage": pct, "total": total_classes, "attended": total_attended}
-            else:
-                attendance_by_subject[sub_id] = None  # not enrolled
+            pct = int(total_attended / total_classes * 100) if total_classes > 0 else 0
+            attendance_by_subject[sub_id] = {
+                "percentage": pct,
+                "total": total_classes,
+                "attended": total_attended
+            }
 
         students_data.append({
             "id": student_id,
@@ -722,8 +772,6 @@ def get_attendance_matrix():
             "attendance": attendance_by_subject
         })
 
-    cursor.close()
-    db.close()
     return jsonify({"subjects": subjects, "students": students_data})
 
 
