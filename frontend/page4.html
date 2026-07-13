@@ -556,7 +556,7 @@
             const regNum = studentData.registerNumber || studentData.identifier || '';
 
             if (regNum) {
-                const response = await fetch(`https://attendance-system-kwds.onrender.com/get_student_calendar/${regNum}/${subjectId}?class_type=${encodeURIComponent(classType)}`);
+                const response = await fetch(`https://attendance-system-backend-tdbg.onrender.com/get_student_calendar/${regNum}/${subjectId}?class_type=${encodeURIComponent(classType)}`);
                 calendarData = await response.json();
             } else {
                 calendarData = {};
@@ -713,8 +713,8 @@
             try {
                 // Use history endpoint for past-year view, normal report otherwise
                 const endpoint = isHistory
-                    ? `https://attendance-system-kwds.onrender.com/get_student_history/${encodeURIComponent(regNum)}`
-                    : `https://attendance-system-kwds.onrender.com/get_student_report/${encodeURIComponent(regNum)}`;
+                    ? `https://attendance-system-backend-tdbg.onrender.com/get_student_history/${encodeURIComponent(regNum)}`
+                    : `https://attendance-system-backend-tdbg.onrender.com/get_student_report/${encodeURIComponent(regNum)}`;
 
                 const response = await fetch(endpoint);
                 if (!response.ok) {
