@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import mysql.connector
+import os
 
 app = Flask(__name__)
 # Allow requests from file:// (null origin), localhost dev servers, and 127.0.0.1
@@ -9,12 +10,22 @@ CORS(app, resources={r"/*": {"origins": ["null", "http://localhost:5500", "http:
      allow_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
+# def get_db_connection():
+#     return mysql.connector.connect(
+#         host="localhost",
+#         user="root",
+#         password="n#1728",
+#         database="attendance_system"
+#     )
+
 def get_db_connection():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="n#1728",
-        database="attendance_system"
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT")),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
+        ssl_ca="ca.pem"
     )
 
 # Ensure schema has required columns.
