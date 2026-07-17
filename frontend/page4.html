@@ -757,6 +757,7 @@
                         return {
                             subject_id:   subject.subject_id,
                             subject:      subject.subject,
+                            subject_code: subject.subject_code || '',
                             category:     (subject.category || 'course').toLowerCase(),
                             totalClasses: stats.totalClasses,
                             attended:     stats.attended,
@@ -888,6 +889,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const selectedType = urlParams.get('type') || 'theory';
             const classType = selectedType === 'lab' ? 'Lab' : 'Theory';
+            const iconMap = JSON.parse(localStorage.getItem('subjectIconMap') || '{}');
 
             let totalClasses = 0;
             let totalAttended = 0;
@@ -896,10 +898,11 @@
             data.forEach(subject => {
                 const row = document.createElement('tr');
                 const badgeClass = getPercentageBadgeClass(subject.percentage);
+                const icon = iconMap[subject.subject_code] || '📘';
 
                 row.innerHTML = `
                     <td class="subject-name">
-                        ${subject.subject}
+                        ${icon} ${subject.subject}
                         <br>
                         <button class="calendar-btn" onclick="openCalendar(${subject.subject_id}, '${subject.subject} - ${classType}', '${classType}')">📅 View Dates</button>
                     </td>

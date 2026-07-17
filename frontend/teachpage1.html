@@ -476,7 +476,6 @@
             background: #e0e0e0;
             color: #333;
         }
-
         .btn-cancel:hover {
             background: #d0d0d0;
         }
@@ -518,6 +517,47 @@
             border-color: transparent;
             color: white;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+        }
+
+        /* Icon Picker */
+        .icon-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .icon-option {
+            font-size: 26px;
+            text-align: center;
+            padding: 8px 4px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #f8f8f8;
+            transition: all 0.2s ease;
+            user-select: none;
+            line-height: 1;
+        }
+
+        .icon-option:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+            transform: scale(1.12);
+        }
+
+        .icon-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+            transform: scale(1.1);
+        }
+
+        .icon-picker-hint {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+            text-align: center;
         }
 
         @media (max-width: 768px) {
@@ -636,15 +676,35 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="studentCount">Number of Students</label>
-                    <input 
-                        type="number" 
-                        id="studentCount"
-                        name="student_count" 
-                        placeholder="e.g., 45" 
-                        min="1"
-                        required
-                    >
+                    <label>Choose Subject Icon</label>
+                    <div class="icon-picker-grid" id="iconPickerGrid">
+                        <span class="icon-option" onclick="selectIcon(this)">💻</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🖥️</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🌐</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🗄️</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🤖</span>
+                        <span class="icon-option" onclick="selectIcon(this)">📱</span>
+                        <span class="icon-option" onclick="selectIcon(this)">📐</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🔢</span>
+                        <span class="icon-option" onclick="selectIcon(this)">📊</span>
+                        <span class="icon-option" onclick="selectIcon(this)">📈</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🔐</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🛡️</span>
+                        <span class="icon-option" onclick="selectIcon(this)">☁️</span>
+                        <span class="icon-option" onclick="selectIcon(this)">⚙️</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🧠</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🔬</span>
+                        <span class="icon-option" onclick="selectIcon(this)">📡</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🗣️</span>
+                        <span class="icon-option" onclick="selectIcon(this)">📝</span>
+                        <span class="icon-option" onclick="selectIcon(this)">📚</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🧮</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🔗</span>
+                        <span class="icon-option" onclick="selectIcon(this)">🖱️</span>
+                        <span class="icon-option" onclick="selectIcon(this)">⌨️</span>
+                    </div>
+                    <div class="icon-picker-hint">Tap an icon to select it for this subject</div>
+                    <input type="hidden" id="selectedIconInput" name="subject_icon">
                 </div>
                 <div class="modal-buttons">
                     <button type="submit" class="btn-submit">➕ Add Subject</button>
@@ -744,23 +804,13 @@
             }).join('');
         }
 
-        function getSubjectIcon(name) {
-
-            const subject = name.toLowerCase();
-
-            if(subject.includes("data")) return "💻";
-            if(subject.includes("network")) return "🌐";
-            if(subject.includes("math")) return "📐";
-            if(subject.includes("ai")) return "🤖";
-            if(subject.includes("Database")) return "🗄️";
-
-            return "📘"; 
-        }
-
         async function loadSubjects() {
 
             const response = await fetch("https://attendance-system-backend-tdbg.onrender.com/get_subjects");
             const subjects = await response.json();
+
+            // Read locally-saved icons (backend doesn't persist subject_icon yet)
+            const iconMap = JSON.parse(localStorage.getItem('subjectIconMap') || '{}');
 
             // Convert DB format → your UI format
             allSubjects = subjects.map((s, index) => ({
@@ -769,7 +819,7 @@
                 code: s.subject_code,
                 students: s.student_count,
                 category: (s.subject_category || 'course').toLowerCase(),
-                icon: getSubjectIcon(s.subject_name)
+                icon: iconMap[s.subject_code] || s.subject_icon || '📘'
             }));
 
             filteredSubjects = [...allSubjects];
@@ -779,7 +829,7 @@
 
         // Select Lab or Theory type
         function selectType(subjectId, type) {
-            const subject = allSubjects.find(s => s.id === subjectId);
+            const subject = allSubjects.find(s => s.id == subjectId);
             const uploadBtn = document.getElementById(`uploadBtn-${subjectId}`);
             const buttons = uploadBtn.parentElement.querySelectorAll('.type-btn');
 
@@ -840,22 +890,34 @@
             document.getElementById('addSubjectModal').classList.remove('show');
             document.getElementById('subjectName').value = '';
             document.getElementById('subjectCode').value = '';
-            document.getElementById('studentCount').value = '';
+            document.getElementById('selectedIconInput').value = '';
+            // Reset icon selection
+            document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
             // Reset category radio buttons
             document.querySelectorAll('input[name="subject_category"]').forEach(r => r.checked = false);
         }
 
+        function selectIcon(el) {
+            document.querySelectorAll('.icon-option').forEach(e => e.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('selectedIconInput').value = el.textContent.trim();
+        }
 
         async function submitAddSubject(event) {
             event.preventDefault();
 
             const subjectName = document.getElementById("subjectName").value;
             const subjectCode = document.getElementById("subjectCode").value;
-            const studentCount = document.getElementById("studentCount").value;
+            const selectedIcon = document.getElementById("selectedIconInput").value;
             const categoryRadio = document.querySelector('input[name="subject_category"]:checked');
 
             if (!categoryRadio) {
                 alert("Please select a subject category (Course Subject or Language).");
+                return;
+            }
+
+            if (!selectedIcon) {
+                alert("Please choose an icon for the subject.");
                 return;
             }
 
@@ -869,11 +931,17 @@
                 body: JSON.stringify({
                     subject_name: subjectName,
                     subject_code: subjectCode,
-                    student_count: studentCount,
-                    subject_category: subjectCategory
+                    student_count: 0,
+                    subject_category: subjectCategory,
+                    subject_icon: selectedIcon
                 })
             });
             const data = await response.json();
+
+            // Save the chosen icon locally so it survives page reloads
+            const iconMap = JSON.parse(localStorage.getItem('subjectIconMap') || '{}');
+            iconMap[subjectCode] = selectedIcon;
+            localStorage.setItem('subjectIconMap', JSON.stringify(iconMap));
 
             closeAddSubjectModal();
 
