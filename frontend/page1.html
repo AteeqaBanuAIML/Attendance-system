@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance System - Login</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#B9AEFF">
+    <meta name="theme-color" content="#4F46E5">
+    <!-- iOS PWA support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Attendance">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <style>
         * {
             margin: 0;
@@ -528,7 +533,7 @@
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {
                 navigator.serviceWorker
-                    .register("/sw.js")
+                    .register("./sw.js")
                     .then((registration) => {
                         console.log("Service Worker registered successfully.");
                     })

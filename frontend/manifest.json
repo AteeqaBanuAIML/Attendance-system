@@ -2,21 +2,23 @@
   "name": "Attendance System",
   "short_name": "Attendance",
   "description": "Student Attendance Management System",
-  "start_url": "/",
+  "start_url": "./page1.html",
   "display": "standalone",
-  "background_color": "#FFFFFF",
+  "background_color": "#ccccff",
   "theme_color": "#4F46E5",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icons/icon-192.jpg",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-512.jpg",
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
