@@ -196,15 +196,14 @@
 
         /* ── Semester hint modal ── */
         .hint-overlay {
-            display: none;
             position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            z-index: 999;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
             justify-content: center;
             align-items: center;
         }
-        .hint-overlay.active { display: flex; }
         .hint-box {
             background: #fff;
             border-radius: 16px;
@@ -212,7 +211,7 @@
             max-width: 320px;
             width: 90%;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
         }
         .hint-box .hint-icon { font-size: 38px; margin-bottom: 12px; }
         .hint-box p {
@@ -221,7 +220,7 @@
             line-height: 1.6;
             margin-bottom: 22px;
         }
-        .hint-box button {
+        .hint-ok-btn {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: #fff;
             border: none;
@@ -230,19 +229,17 @@
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: opacity 0.2s;
         }
-        .hint-box button:hover { opacity: 0.88; }
     </style>
 </head>
 <body>
 
     <!-- Semester hint modal -->
-    <div class="hint-overlay" id="hintOverlay">
+    <div id="hintOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:none;justify-content:center;align-items:center;">
         <div class="hint-box">
             <div class="hint-icon">📚</div>
             <p id="hintMessage"></p>
-            <button onclick="document.getElementById('hintOverlay').classList.remove('active')">OK</button>
+            <button class="hint-ok-btn" onclick="closeHint()">OK</button>
         </div>
     </div>
 
@@ -307,8 +304,13 @@
             };
             if (messages[year]) {
                 document.getElementById('hintMessage').textContent = messages[year];
-                document.getElementById('hintOverlay').classList.add('active');
+                var overlay = document.getElementById('hintOverlay');
+                overlay.style.display = 'flex';
             }
+        }
+
+        function closeHint() {
+            document.getElementById('hintOverlay').style.display = 'none';
         }
 
         async function handleRegister(event) {
