@@ -135,28 +135,48 @@ def get_subjects():
     db = get_db_connection()
     cursor = db.cursor()
 
-    cursor.execute("""
-        SELECT s.id, s.subject_name, s.subject_code,
-               COUNT(ss.student_id) as student_count,
-               s.subject_category, s.subject_icon
-        FROM subjects s
-        LEFT JOIN student_subjects ss ON s.id = ss.subject_id
-        GROUP BY s.id, s.subject_name, s.subject_code, s.subject_category, s.subject_icon
-    """)
-
-    subjects = cursor.fetchall()
     subject_list = []
 
-    for sub in subjects:
-        subject_list.append({
-            "id": sub[0],
-            "subject_name": sub[1],
-            "subject_code": sub[2],
-            "student_count": sub[3],
-            "subject_category": sub[4] or 'course',
-            "subject_icon": sub[5] or '📘'
-        })
-        
+    try:
+        cursor.execute("""
+            SELECT s.id, s.subject_name, s.subject_code,
+                   COUNT(ss.student_id) as student_count,
+                   s.subject_category, s.subject_icon
+            FROM subjects s
+            LEFT JOIN student_subjects ss ON s.id = ss.subject_id
+            GROUP BY s.id, s.subject_name, s.subject_code, s.subject_category, s.subject_icon
+        """)
+        subjects = cursor.fetchall()
+        for sub in subjects:
+            subject_list.append({
+                "id": sub[0],
+                "subject_name": sub[1],
+                "subject_code": sub[2],
+                "student_count": sub[3],
+                "subject_category": sub[4] or 'course',
+                "subject_icon": sub[5] or '📘'
+            })
+    except Exception:
+        # Fallback: subject_icon column not yet in DB
+        cursor.execute("""
+            SELECT s.id, s.subject_name, s.subject_code,
+                   COUNT(ss.student_id) as student_count,
+                   s.subject_category
+            FROM subjects s
+            LEFT JOIN student_subjects ss ON s.id = ss.subject_id
+            GROUP BY s.id, s.subject_name, s.subject_code, s.subject_category
+        """)
+        subjects = cursor.fetchall()
+        for sub in subjects:
+            subject_list.append({
+                "id": sub[0],
+                "subject_name": sub[1],
+                "subject_code": sub[2],
+                "student_count": sub[3],
+                "subject_category": sub[4] or 'course',
+                "subject_icon": '📘'
+            })
+
     cursor.close()
     db.close()
 
