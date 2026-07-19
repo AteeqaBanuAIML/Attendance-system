@@ -193,9 +193,59 @@
                 padding: 10px;
             }
         }
+
+        /* ── Semester hint modal ── */
+        .hint-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+        .hint-overlay.active { display: flex; }
+        .hint-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 30px 28px 24px;
+            max-width: 320px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        }
+        .hint-box .hint-icon { font-size: 38px; margin-bottom: 12px; }
+        .hint-box p {
+            color: #333;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+        .hint-box button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 40px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .hint-box button:hover { opacity: 0.88; }
     </style>
 </head>
 <body>
+
+    <!-- Semester hint modal -->
+    <div class="hint-overlay" id="hintOverlay">
+        <div class="hint-box">
+            <div class="hint-icon">📚</div>
+            <p id="hintMessage"></p>
+            <button onclick="document.getElementById('hintOverlay').classList.remove('active')">OK</button>
+        </div>
+    </div>
+
     <div class="login-container">
         <div class="header">
             <h1>Attendance System</h1>
@@ -230,7 +280,6 @@
                     <option value="2nd year">2nd year</option>
                     <option value="3rd year">3rd year</option>
                 </select>
-                <div id="semesterHint" style="display:none; margin-top:10px; background:#eef2ff; border-left:4px solid #667eea; border-radius:6px; padding:10px 14px; font-size:13px; color:#4338ca; font-weight:500;"></div>
             </div>
 
             <!-- Subjects -->
@@ -250,6 +299,18 @@
     </div>
 
     <script>
+        function showSemesterHint(year) {
+            const messages = {
+                '1st year': 'Please select all subjects from both 1st Semester and 2nd Semester.',
+                '2nd year': 'Please select all subjects from both 3rd Semester and 4th Semester.',
+                '3rd year': 'Please select all subjects from both 5th Semester and 6th Semester.'
+            };
+            if (messages[year]) {
+                document.getElementById('hintMessage').textContent = messages[year];
+                document.getElementById('hintOverlay').classList.add('active');
+            }
+        }
+
         async function handleRegister(event) {
             event.preventDefault();
             const name = document.getElementById('regName').value.trim();
@@ -264,11 +325,6 @@
                 return;
             }
 
-            // const regData = {name, number, dept, year, subjects};
-            // localStorage.setItem('registrationData', JSON.stringify(regData));
-            // console.log('Registered:', regData);
-            // alert('Registration successful!');
-            // window.location.href = 'page1.html';
             const response = await fetch("https://attendance-system-backend-tdbg.onrender.com/register_student", {
                 method: "POST",
                 headers: {
@@ -284,48 +340,28 @@
             window.location.href = "page1.html";
         }
 
-        function showSemesterHint(year) {
-            const hint = document.getElementById('semesterHint');
-            const messages = {
-                '1st year': '📚 Please select all subjects from both <strong>1st Semester</strong> and <strong>2nd Semester</strong>.',
-                '2nd year': '📚 Please select all subjects from both <strong>3rd Semester</strong> and <strong>4th Semester</strong>.',
-                '3rd year': '📚 Please select all subjects from both <strong>5th Semester</strong> and <strong>6th Semester</strong>.'
-            };
-            if (messages[year]) {
-                hint.innerHTML = messages[year];
-                hint.style.display = 'block';
-            } else {
-                hint.style.display = 'none';
-            }
-        }
-
         // to load subjects
         window.addEventListener('DOMContentLoaded', loadSubjectsForRegistration);
 
-            async function loadSubjectsForRegistration() {
+        async function loadSubjectsForRegistration() {
+            const response = await fetch("https://attendance-system-backend-tdbg.onrender.com/get_subjects");
+            const subjects = await response.json();
 
-                const response = await fetch("https://attendance-system-backend-tdbg.onrender.com/get_subjects");
-                const subjects = await response.json();
+            const container = document.getElementById("subjectsContainer");
+            container.innerHTML = "";
 
-                const container = document.getElementById("subjectsContainer");
-
-                container.innerHTML = "";
-
-                subjects.forEach(sub => {
-
-                    const label = document.createElement("label");
-                    label.className = "subject-card";
-
-                    label.innerHTML = `
-                        <input type="checkbox" name="subject" value="${sub.id}"
-                            onchange="this.parentElement.classList.toggle('selected', this.checked)">
-                        ${sub.subject_name}
-                        <div class="tick-mark">✓</div>
-                    `;
-
-                    container.appendChild(label);
-                });
-}
+            subjects.forEach(sub => {
+                const label = document.createElement("label");
+                label.className = "subject-card";
+                label.innerHTML = `
+                    <input type="checkbox" name="subject" value="${sub.id}"
+                        onchange="this.parentElement.classList.toggle('selected', this.checked)">
+                    ${sub.subject_name}
+                    <div class="tick-mark">✓</div>
+                `;
+                container.appendChild(label);
+            });
+        }
     </script>
 </body>
 </html>
