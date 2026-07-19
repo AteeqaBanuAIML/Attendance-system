@@ -47,7 +47,7 @@ def ensure_schema():
         migrations = [
             "ALTER TABLE attendance ADD COLUMN class_type VARCHAR(20) DEFAULT 'Theory';",
             "ALTER TABLE subjects ADD COLUMN subject_category VARCHAR(20) DEFAULT 'course';",
-            "ALTER TABLE subjects ADD COLUMN subject_icon VARCHAR(10) DEFAULT '\ud83d\udcd8';",
+            "ALTER TABLE subjects ADD COLUMN subject_icon VARCHAR(20) DEFAULT 'book';",
             "ALTER TABLE students ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active';"
         ]
         for sql in migrations:
