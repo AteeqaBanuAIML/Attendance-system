@@ -47,6 +47,7 @@ def ensure_schema():
         migrations = [
             "ALTER TABLE attendance ADD COLUMN class_type VARCHAR(20) DEFAULT 'Theory';",
             "ALTER TABLE subjects ADD COLUMN subject_category VARCHAR(20) DEFAULT 'course';",
+            "ALTER TABLE subjects ADD COLUMN subject_icon VARCHAR(10) DEFAULT '\ud83d\udcd8';",
             "ALTER TABLE students ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active';"
         ]
         for sql in migrations:
@@ -110,16 +111,17 @@ def add_subject():
     subject_code = data['subject_code']
     student_count = data['student_count']
     subject_category = data.get('subject_category', 'course').lower()
+    subject_icon = data.get('subject_icon', '📘')
 
     db = get_db_connection()
     cursor = db.cursor()
     
     query = """
-    INSERT INTO subjects (subject_name, subject_code, student_count, subject_category)
-    VALUES (%s, %s, %s, %s)
+    INSERT INTO subjects (subject_name, subject_code, student_count, subject_category, subject_icon)
+    VALUES (%s, %s, %s, %s, %s)
     """
 
-    cursor.execute(query, (subject_name, subject_code, student_count, subject_category))
+    cursor.execute(query, (subject_name, subject_code, student_count, subject_category, subject_icon))
     db.commit()
     
     cursor.close()
@@ -136,10 +138,10 @@ def get_subjects():
     cursor.execute("""
         SELECT s.id, s.subject_name, s.subject_code,
                COUNT(ss.student_id) as student_count,
-               s.subject_category
+               s.subject_category, s.subject_icon
         FROM subjects s
         LEFT JOIN student_subjects ss ON s.id = ss.subject_id
-        GROUP BY s.id, s.subject_name, s.subject_code, s.subject_category
+        GROUP BY s.id, s.subject_name, s.subject_code, s.subject_category, s.subject_icon
     """)
 
     subjects = cursor.fetchall()
@@ -151,7 +153,8 @@ def get_subjects():
             "subject_name": sub[1],
             "subject_code": sub[2],
             "student_count": sub[3],
-            "subject_category": sub[4] or 'course'
+            "subject_category": sub[4] or 'course',
+            "subject_icon": sub[5] or '📘'
         })
         
     cursor.close()
@@ -413,7 +416,7 @@ def get_student_report(reg_number):
     student_id, student_year = student_row
 
     query = """
-    SELECT sub.id, sub.subject_name, sub.subject_category,
+    SELECT sub.id, sub.subject_name, sub.subject_category, sub.subject_code, sub.subject_icon,
            'Theory' as class_type,
            (SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = sub.id AND class_type = 'Theory') as total_classes,
            (SELECT COUNT(*) FROM attendance WHERE subject_id = sub.id AND student_id = %s AND status = 'present' AND class_type = 'Theory') as attended
@@ -421,7 +424,7 @@ def get_student_report(reg_number):
     JOIN student_subjects ss ON ss.subject_id = sub.id
     WHERE ss.student_id = %s
     UNION ALL
-    SELECT sub.id, sub.subject_name, sub.subject_category,
+    SELECT sub.id, sub.subject_name, sub.subject_category, sub.subject_code, sub.subject_icon,
            'Lab' as class_type,
            (SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = sub.id AND class_type = 'Lab') as total_classes,
            (SELECT COUNT(*) FROM attendance WHERE subject_id = sub.id AND student_id = %s AND status = 'present' AND class_type = 'Lab') as attended
@@ -436,16 +439,20 @@ def get_student_report(reg_number):
     for r in rows:
         subject_id    = r[0]
         subject_name  = r[1]
-        category      = (r[2] or 'course').lower()   # 'course' or 'language'
-        class_type    = r[3]
-        total_classes = r[4] or 0
-        attended      = r[5] or 0
+        category      = (r[2] or 'course').lower()
+        subject_code  = r[3] or ''
+        subject_icon  = r[4] or '📘'
+        class_type    = r[5]
+        total_classes = r[6] or 0
+        attended      = r[7] or 0
         percentage    = int((attended / total_classes * 100)) if total_classes > 0 else 0
 
         if subject_id not in subjects_dict:
             subjects_dict[subject_id] = {
                 "subject_id": subject_id,
                 "subject": subject_name,
+                "subject_code": subject_code,
+                "subject_icon": subject_icon,
                 "category": category,
                 "theory": {"totalClasses": 0, "attended": 0, "percentage": 0},
                 "lab":    {"totalClasses": 0, "attended": 0, "percentage": 0}
@@ -485,7 +492,7 @@ def get_student_subjects(reg_number):
     student_id = student_row[0]
 
     cursor.execute(
-        "SELECT s.id, s.subject_name, s.subject_code FROM subjects s "
+        "SELECT s.id, s.subject_name, s.subject_code, s.subject_icon FROM subjects s "
         "JOIN student_subjects ss ON s.id = ss.subject_id "
         "WHERE ss.student_id = %s",
         (student_id,)
@@ -497,7 +504,8 @@ def get_student_subjects(reg_number):
         subjects.append({
             "subject_id": r[0],
             "subject_name": r[1],
-            "subject_code": r[2]
+            "subject_code": r[2],
+            "subject_icon": r[3] or '📘'
         })
 
     cursor.close()

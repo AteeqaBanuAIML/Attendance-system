@@ -938,11 +938,6 @@
             });
             const data = await response.json();
 
-            // Save the chosen icon locally so it survives page reloads
-            const iconMap = JSON.parse(localStorage.getItem('subjectIconMap') || '{}');
-            iconMap[subjectCode] = selectedIcon;
-            localStorage.setItem('subjectIconMap', JSON.stringify(iconMap));
-
             closeAddSubjectModal();
 
             await loadSubjects(); 
