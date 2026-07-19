@@ -224,12 +224,13 @@
             <!-- Year -->
             <div class="form-group">
                 <label for="year">Year</label>
-                <select id="year" required>
+                <select id="year" required onchange="showSemesterHint(this.value)">
                     <option value="">Select year</option>
                     <option value="1st year">1st year</option>
                     <option value="2nd year">2nd year</option>
                     <option value="3rd year">3rd year</option>
                 </select>
+                <div id="semesterHint" style="display:none; margin-top:10px; background:#eef2ff; border-left:4px solid #667eea; border-radius:6px; padding:10px 14px; font-size:13px; color:#4338ca; font-weight:500;"></div>
             </div>
 
             <!-- Subjects -->
@@ -281,6 +282,21 @@
             alert(data.message);
 
             window.location.href = "page1.html";
+        }
+
+        function showSemesterHint(year) {
+            const hint = document.getElementById('semesterHint');
+            const messages = {
+                '1st year': '📚 Please select all subjects from both <strong>1st Semester</strong> and <strong>2nd Semester</strong>.',
+                '2nd year': '📚 Please select all subjects from both <strong>3rd Semester</strong> and <strong>4th Semester</strong>.',
+                '3rd year': '📚 Please select all subjects from both <strong>5th Semester</strong> and <strong>6th Semester</strong>.'
+            };
+            if (messages[year]) {
+                hint.innerHTML = messages[year];
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
+            }
         }
 
         // to load subjects
