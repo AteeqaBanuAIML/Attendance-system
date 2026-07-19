@@ -348,7 +348,12 @@
         }
 
         // to load subjects
-        window.addEventListener('DOMContentLoaded', loadSubjectsForRegistration);
+        window.addEventListener('DOMContentLoaded', function() {
+            loadSubjectsForRegistration();
+            // Trigger hint if browser remembered previous year selection
+            var yr = document.getElementById('year').value;
+            if (yr) showSemesterHint(yr);
+        });
 
         async function loadSubjectsForRegistration() {
             const response = await fetch("https://attendance-system-backend-tdbg.onrender.com/get_subjects");
