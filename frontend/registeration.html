@@ -298,19 +298,13 @@
     <script>
         function showSemesterHint(year) {
             const messages = {
-                '1st year': 'Please select all subjects from both 1st Semester and 2nd Semester.',
-                '2nd year': 'Please select all subjects from both 3rd Semester and 4th Semester.',
-                '3rd year': 'Please select all subjects from both 5th Semester and 6th Semester.'
+                '1st year': '📚 Please select all subjects from both 1st Semester and 2nd Semester.',
+                '2nd year': '📚 Please select all subjects from both 3rd Semester and 4th Semester.',
+                '3rd year': '📚 Please select all subjects from both 5th Semester and 6th Semester.'
             };
             if (messages[year]) {
-                document.getElementById('hintMessage').textContent = messages[year];
-                var overlay = document.getElementById('hintOverlay');
-                overlay.style.display = 'flex';
+                alert(messages[year]);
             }
-        }
-
-        function closeHint() {
-            document.getElementById('hintOverlay').style.display = 'none';
         }
 
         async function handleRegister(event) {
