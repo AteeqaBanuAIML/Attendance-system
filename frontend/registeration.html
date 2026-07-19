@@ -277,6 +277,13 @@
                     <option value="2nd year">2nd year</option>
                     <option value="3rd year">3rd year</option>
                 </select>
+
+                <!-- Semester hint box -->
+                <div id="semHint" style="display:none; margin-top:12px; background:#fff3cd; border:2px solid #f0a500; border-radius:10px; padding:14px 16px; font-size:14px; color:#7a4f00; font-weight:600; line-height:1.5;">
+                    <span id="semHintText"></span>
+                    <br>
+                    <button type="button" onclick="document.getElementById('semHint').style.display='none';" style="margin-top:10px; background:#f0a500; color:#fff; border:none; border-radius:6px; padding:6px 24px; font-size:14px; font-weight:700; cursor:pointer;">OK</button>
+                </div>
             </div>
 
             <!-- Subjects -->
@@ -302,8 +309,12 @@
                 '2nd year': '📚 Please select all subjects from both 3rd Semester and 4th Semester.',
                 '3rd year': '📚 Please select all subjects from both 5th Semester and 6th Semester.'
             };
+            const box = document.getElementById('semHint');
             if (messages[year]) {
-                alert(messages[year]);
+                document.getElementById('semHintText').textContent = messages[year];
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
             }
         }
 
