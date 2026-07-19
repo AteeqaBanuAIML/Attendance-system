@@ -415,54 +415,105 @@ def get_student_report(reg_number):
 
     student_id, student_year = student_row
 
-    query = """
-    SELECT sub.id, sub.subject_name, sub.subject_category, sub.subject_code, sub.subject_icon,
-           'Theory' as class_type,
-           (SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = sub.id AND class_type = 'Theory') as total_classes,
-           (SELECT COUNT(*) FROM attendance WHERE subject_id = sub.id AND student_id = %s AND status = 'present' AND class_type = 'Theory') as attended
-    FROM subjects sub
-    JOIN student_subjects ss ON ss.subject_id = sub.id
-    WHERE ss.student_id = %s
-    UNION ALL
-    SELECT sub.id, sub.subject_name, sub.subject_category, sub.subject_code, sub.subject_icon,
-           'Lab' as class_type,
-           (SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = sub.id AND class_type = 'Lab') as total_classes,
-           (SELECT COUNT(*) FROM attendance WHERE subject_id = sub.id AND student_id = %s AND status = 'present' AND class_type = 'Lab') as attended
-    FROM subjects sub
-    JOIN student_subjects ss ON ss.subject_id = sub.id
-    WHERE ss.student_id = %s
-    """
-    cursor.execute(query, (student_id, student_id, student_id, student_id))
-    rows = cursor.fetchall()
-
     subjects_dict = {}
-    for r in rows:
-        subject_id    = r[0]
-        subject_name  = r[1]
-        category      = (r[2] or 'course').lower()
-        subject_code  = r[3] or ''
-        subject_icon  = r[4] or '📘'
-        class_type    = r[5]
-        total_classes = r[6] or 0
-        attended      = r[7] or 0
-        percentage    = int((attended / total_classes * 100)) if total_classes > 0 else 0
 
-        if subject_id not in subjects_dict:
-            subjects_dict[subject_id] = {
-                "subject_id": subject_id,
-                "subject": subject_name,
-                "subject_code": subject_code,
-                "subject_icon": subject_icon,
-                "category": category,
-                "theory": {"totalClasses": 0, "attended": 0, "percentage": 0},
-                "lab":    {"totalClasses": 0, "attended": 0, "percentage": 0}
+    # Try the newer query that includes subject_code and subject_icon.
+    # Falls back to the safe old query if those columns don't exist yet.
+    try:
+        query = """
+        SELECT sub.id, sub.subject_name, sub.subject_category, sub.subject_code, sub.subject_icon,
+               'Theory' as class_type,
+               (SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = sub.id AND class_type = 'Theory') as total_classes,
+               (SELECT COUNT(*) FROM attendance WHERE subject_id = sub.id AND student_id = %s AND status = 'present' AND class_type = 'Theory') as attended
+        FROM subjects sub
+        JOIN student_subjects ss ON ss.subject_id = sub.id
+        WHERE ss.student_id = %s
+        UNION ALL
+        SELECT sub.id, sub.subject_name, sub.subject_category, sub.subject_code, sub.subject_icon,
+               'Lab' as class_type,
+               (SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = sub.id AND class_type = 'Lab') as total_classes,
+               (SELECT COUNT(*) FROM attendance WHERE subject_id = sub.id AND student_id = %s AND status = 'present' AND class_type = 'Lab') as attended
+        FROM subjects sub
+        JOIN student_subjects ss ON ss.subject_id = sub.id
+        WHERE ss.student_id = %s
+        """
+        cursor.execute(query, (student_id, student_id, student_id, student_id))
+        rows = cursor.fetchall()
+
+        for r in rows:
+            subject_id    = r[0]
+            subject_name  = r[1]
+            category      = (r[2] or 'course').lower()
+            subject_code  = r[3] or ''
+            subject_icon  = r[4] or '📘'
+            class_type    = r[5]
+            total_classes = r[6] or 0
+            attended      = r[7] or 0
+            percentage    = int((attended / total_classes * 100)) if total_classes > 0 else 0
+
+            if subject_id not in subjects_dict:
+                subjects_dict[subject_id] = {
+                    "subject_id": subject_id,
+                    "subject": subject_name,
+                    "subject_code": subject_code,
+                    "subject_icon": subject_icon,
+                    "category": category,
+                    "theory": {"totalClasses": 0, "attended": 0, "percentage": 0},
+                    "lab":    {"totalClasses": 0, "attended": 0, "percentage": 0}
+                }
+            subjects_dict[subject_id][class_type.lower()] = {
+                "totalClasses": total_classes,
+                "attended": attended,
+                "percentage": percentage
             }
 
-        subjects_dict[subject_id][class_type.lower()] = {
-            "totalClasses": total_classes,
-            "attended": attended,
-            "percentage": percentage
-        }
+    except Exception:
+        # Fallback: subject_icon / subject_code columns not yet in DB
+        fallback_query = """
+        SELECT sub.id, sub.subject_name, sub.subject_category, sub.subject_code,
+               'Theory' as class_type,
+               (SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = sub.id AND class_type = 'Theory') as total_classes,
+               (SELECT COUNT(*) FROM attendance WHERE subject_id = sub.id AND student_id = %s AND status = 'present' AND class_type = 'Theory') as attended
+        FROM subjects sub
+        JOIN student_subjects ss ON ss.subject_id = sub.id
+        WHERE ss.student_id = %s
+        UNION ALL
+        SELECT sub.id, sub.subject_name, sub.subject_category, sub.subject_code,
+               'Lab' as class_type,
+               (SELECT COUNT(DISTINCT date) FROM attendance WHERE subject_id = sub.id AND class_type = 'Lab') as total_classes,
+               (SELECT COUNT(*) FROM attendance WHERE subject_id = sub.id AND student_id = %s AND status = 'present' AND class_type = 'Lab') as attended
+        FROM subjects sub
+        JOIN student_subjects ss ON ss.subject_id = sub.id
+        WHERE ss.student_id = %s
+        """
+        cursor.execute(fallback_query, (student_id, student_id, student_id, student_id))
+        rows = cursor.fetchall()
+
+        for r in rows:
+            subject_id    = r[0]
+            subject_name  = r[1]
+            category      = (r[2] or 'course').lower()
+            subject_code  = r[3] or ''
+            class_type    = r[4]
+            total_classes = r[5] or 0
+            attended      = r[6] or 0
+            percentage    = int((attended / total_classes * 100)) if total_classes > 0 else 0
+
+            if subject_id not in subjects_dict:
+                subjects_dict[subject_id] = {
+                    "subject_id": subject_id,
+                    "subject": subject_name,
+                    "subject_code": subject_code,
+                    "subject_icon": '📘',
+                    "category": category,
+                    "theory": {"totalClasses": 0, "attended": 0, "percentage": 0},
+                    "lab":    {"totalClasses": 0, "attended": 0, "percentage": 0}
+                }
+            subjects_dict[subject_id][class_type.lower()] = {
+                "totalClasses": total_classes,
+                "attended": attended,
+                "percentage": percentage
+            }
 
     subjects_list = list(subjects_dict.values())
 
@@ -491,22 +542,39 @@ def get_student_subjects(reg_number):
 
     student_id = student_row[0]
 
-    cursor.execute(
-        "SELECT s.id, s.subject_name, s.subject_code, s.subject_icon FROM subjects s "
-        "JOIN student_subjects ss ON s.id = ss.subject_id "
-        "WHERE ss.student_id = %s",
-        (student_id,)
-    )
-
-    rows = cursor.fetchall()
-    subjects = []
-    for r in rows:
-        subjects.append({
-            "subject_id": r[0],
-            "subject_name": r[1],
-            "subject_code": r[2],
-            "subject_icon": r[3] or '📘'
-        })
+    try:
+        cursor.execute(
+            "SELECT s.id, s.subject_name, s.subject_code, s.subject_icon FROM subjects s "
+            "JOIN student_subjects ss ON s.id = ss.subject_id "
+            "WHERE ss.student_id = %s",
+            (student_id,)
+        )
+        rows = cursor.fetchall()
+        subjects = []
+        for r in rows:
+            subjects.append({
+                "subject_id": r[0],
+                "subject_name": r[1],
+                "subject_code": r[2],
+                "subject_icon": r[3] or '📘'
+            })
+    except Exception:
+        # Fallback: subject_icon column not yet in DB
+        cursor.execute(
+            "SELECT s.id, s.subject_name, s.subject_code FROM subjects s "
+            "JOIN student_subjects ss ON s.id = ss.subject_id "
+            "WHERE ss.student_id = %s",
+            (student_id,)
+        )
+        rows = cursor.fetchall()
+        subjects = []
+        for r in rows:
+            subjects.append({
+                "subject_id": r[0],
+                "subject_name": r[1],
+                "subject_code": r[2],
+                "subject_icon": '📘'
+            })
 
     cursor.close()
     db.close()
