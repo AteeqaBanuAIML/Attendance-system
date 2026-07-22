@@ -835,7 +835,7 @@
                 subjects.forEach(sub => {
                     const chip = document.createElement('span');
                     chip.style.cssText = 'background:#e8f0fd;color:#1f4ed8;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;';
-                    const icon = iconMap[sub.subject_code] || '📘';
+                    const icon = sub.subject_icon || '📘';
                     chip.textContent = `${icon} ${sub.subject_name} (${sub.subject_code || 'N/A'})`;
                     list.appendChild(chip);
                 });
