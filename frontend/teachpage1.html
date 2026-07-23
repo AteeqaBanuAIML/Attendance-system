@@ -670,9 +670,9 @@
                     <label>Subject Category</label>
                     <div class="category-toggle">
                         <input type="radio" id="catCourse" name="subject_category" value="course" required>
-                        <label for="catCourse">📚 Course Subject</label>
+                        <label for="catCourse">📚Theory and🖥️practical</label>
                         <input type="radio" id="catLanguage" name="subject_category" value="language">
-                        <label for="catLanguage">🗣️ Language</label>
+                        <label for="catLanguage">📚Only Theory</label>
                     </div>
                 </div>
                 <div class="form-group">
@@ -782,7 +782,7 @@
                     <div class="subject-icon">${subject.icon}</div> 
                     <div class="subject-name">${subject.name}</div>
                     <div class="subject-code">${subject.code}</div>
-                    ${isLanguage ? '<div class="subject-badge-lang">🗣️ Language</div>' : ''}
+                    ${isLanguage ? '<div class="subject-badge-lang">📚Only Theory</div>' : ''}
                     <div class="subject-details">
                         <div class="subject-detail"><span>Students:</span> ${subject.students}</div>
                     </div>
