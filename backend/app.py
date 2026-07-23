@@ -58,6 +58,38 @@ def ensure_schema():
                 err_msg = str(e)
                 if 'Duplicate column name' not in err_msg and 'already exists' not in err_msg:
                     print(f"[WARN] Migration skipped ({sql[:50]}): {e}")
+
+        # ── De-duplicate teachers: keep the earliest row per email ────────────
+        # Step 1: delete all rows whose id is NOT the minimum id for that email.
+        try:
+            cursor.execute("""
+                DELETE t FROM teachers t
+                INNER JOIN (
+                    SELECT email, MIN(id) AS keep_id
+                    FROM teachers
+                    GROUP BY email
+                ) keep_tbl ON t.email = keep_tbl.email
+                WHERE t.id <> keep_tbl.keep_id
+            """)
+            removed = cursor.rowcount
+            if removed:
+                print(f"[INFO] Removed {removed} duplicate teacher row(s).")
+            db.commit()
+        except mysql.connector.Error as e:
+            print(f"[WARN] Teacher de-dup skipped: {e}")
+
+        # Step 2: add UNIQUE constraint on email (skipped if already exists).
+        try:
+            cursor.execute("""
+                ALTER TABLE teachers ADD UNIQUE KEY uq_teacher_email (email)
+            """)
+            db.commit()
+            print("[INFO] Added UNIQUE constraint on teachers.email.")
+        except mysql.connector.Error as e:
+            err_msg = str(e)
+            if 'Duplicate key name' not in err_msg and 'already exists' not in err_msg:
+                print(f"[WARN] Could not add UNIQUE on teachers.email: {e}")
+
         # App settings table (stores key-value flags like promotion_enabled)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS app_settings (
@@ -322,9 +354,14 @@ def teacher_login():
     # before the next query runs, preventing "Unread result found" errors.
     cursor = db.cursor(buffered=True)
 
-    # Auto-save teacher if not already in table (INSERT IGNORE skips if email exists)
+    # Insert teacher if new; if email already exists, just update the name
+    # (ON DUPLICATE KEY UPDATE requires a UNIQUE constraint on email, added by ensure_schema)
     cursor.execute(
-        "INSERT IGNORE INTO teachers (name, email) VALUES (%s, %s)",
+        """
+        INSERT INTO teachers (name, email)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE name = VALUES(name)
+        """,
         (name, email)
     )
     db.commit()
