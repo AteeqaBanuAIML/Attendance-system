@@ -530,18 +530,7 @@
                 .catch(() => alert('Backend error. Is the server running?'));
             }
         }
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-                navigator.serviceWorker
-                    .register("./sw.js")
-                    .then((registration) => {
-                        console.log("Service Worker registered successfully.");
-                    })
-                    .catch((error) => {
-                        console.log("Service Worker registration failed:", error);
-                    });
-            });
-        }
     </script>
+    <script src="./sw-update.js"></script>
 </body>
 </html>
