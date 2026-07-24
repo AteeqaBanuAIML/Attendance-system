@@ -345,7 +345,27 @@
             window.location.href = "page1.html";
         }
 
-        // to load subjects
+        // ── Smart subject cache (shared with teachpage1) ─────────────────
+        const SUBJECTS_CACHE_KEY = 'subjectsCache';
+        const API_URL = 'https://attendance-system-backend-tdbg.onrender.com/get_subjects';
+
+        function renderSubjects(subjects) {
+            const container = document.getElementById('subjectsContainer');
+            container.innerHTML = '';
+            subjects.forEach(sub => {
+                const label = document.createElement('label');
+                label.className = 'subject-card';
+                label.innerHTML = `
+                    <input type="checkbox" name="subject" value="${sub.id || sub.subject_id || sub.subject_code}"
+                        onchange="this.parentElement.classList.toggle('selected', this.checked)">
+                    ${sub.subject_name || sub.name}
+                    <div class="tick-mark">✓</div>
+                `;
+                container.appendChild(label);
+            });
+        }
+
+        // Trigger on page load
         window.addEventListener('DOMContentLoaded', function() {
             loadSubjectsForRegistration();
             // Trigger hint if browser remembered previous year selection
@@ -354,23 +374,42 @@
         });
 
         async function loadSubjectsForRegistration() {
-            const response = await fetch("https://attendance-system-backend-tdbg.onrender.com/get_subjects");
-            const subjects = await response.json();
+            // ── Step 1: Show cached data instantly if available ──
+            const cached = JSON.parse(localStorage.getItem(SUBJECTS_CACHE_KEY) || 'null');
+            if (cached && cached.length > 0) {
+                renderSubjects(cached);
+            }
 
-            const container = document.getElementById("subjectsContainer");
-            container.innerHTML = "";
+            // ── Step 2: Fetch from server in background ──
+            try {
+                const response = await fetch(API_URL);
+                const fresh    = await response.json();
 
-            subjects.forEach(sub => {
-                const label = document.createElement("label");
-                label.className = "subject-card";
-                label.innerHTML = `
-                    <input type="checkbox" name="subject" value="${sub.id}"
-                        onchange="this.parentElement.classList.toggle('selected', this.checked)">
-                    ${sub.subject_name}
-                    <div class="tick-mark">✓</div>
-                `;
-                container.appendChild(label);
-            });
+                // ── Step 3: Update only if data changed ──
+                const freshJSON  = JSON.stringify(fresh);
+                const cachedJSON = JSON.stringify(cached);
+
+                if (freshJSON !== cachedJSON) {
+                    // Normalize format before caching (same shape as teachpage1 stores)
+                    const normalized = fresh.map(s => ({
+                        id: s.id,
+                        subject_id: s.id,
+                        subject_name: s.subject_name,
+                        subject_code: s.subject_code,
+                        students: s.student_count,
+                        category: (s.subject_category || 'course').toLowerCase(),
+                        subject_icon: s.subject_icon || '📘'
+                    }));
+                    localStorage.setItem(SUBJECTS_CACHE_KEY, JSON.stringify(normalized));
+                    renderSubjects(fresh);
+                }
+            } catch (err) {
+                console.warn('[registration] Background fetch failed, using cache:', err);
+                if (!cached || cached.length === 0) {
+                    document.getElementById('subjectsContainer').innerHTML =
+                        '<p style="color:#e65100;font-size:13px;">⚠️ Could not load subjects. Please check your connection.</p>';
+                }
+            }
         }
     </script>
     <script src="./sw-update.js"></script>

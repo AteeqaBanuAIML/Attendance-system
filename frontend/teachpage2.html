@@ -779,14 +779,236 @@
             .student-photo-icon {
                 font-size: 40px;
             }
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 50px auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .student-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .student-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .student-item.present {
+            border-left-color: #2e7d32;
+            background: #f1f8f6;
+        }
+
+        .student-item.absent {
+            border-left-color: #c62828;
+            background: #fdf4f4;
+        }
+
+        .student-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .student-item-name {
+            font-weight: 700;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .student-item-register {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .student-item-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .student-item-badge.present {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .student-item-badge.absent {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .student-item-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .toggle-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.present {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .toggle-btn.present:hover {
+            background: #2e7d32;
+            color: white;
+        }
+
+        .toggle-btn.absent {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .toggle-btn.absent:hover {
+            background: #c62828;
+            color: white;
+        }
+
+        .empty-list {
+            text-align: center;
+            padding: 30px 20px;
+            color: #999;
+        }
+
+        .empty-list-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .empty-list-text {
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .cards-container {
+                height: 400px;
+            }
+
+            .student-photo {
+                width: 100px;
+                height: 100px;
+            }
+
+            .student-photo-icon {
+                font-size: 40px;
+            }
 
             .student-name {
                 font-size: 18px;
             }
         }
+        #syncBar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, #667eea, #a78bfa, #667eea);
+            background-size: 200% 100%;
+            animation: syncSlide 1.2s linear infinite;
+            z-index: 99999; display: none;
+        }
+        #syncBar.show { display: block; }
+        @keyframes syncSlide { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+        #syncBadge {
+            position: fixed; bottom: 20px; right: 16px;
+            background: rgba(102,126,234,0.92); color: white;
+            padding: 7px 14px; border-radius: 20px;
+            font-size: 12px; font-weight: 600; z-index: 99999;
+            display: none; align-items: center; gap: 6px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 16px rgba(102,126,234,0.35);
+        }
+        #syncBadge.show { display: flex; }
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: white;
+            animation: syncPulse 0.8s ease-in-out infinite alternate; }
+        @keyframes syncPulse {
+            from { opacity: 0.4; transform: scale(0.8); }
+            to   { opacity: 1;   transform: scale(1.2); }
+        }
     </style>
 </head>
 <body>
+    <div id="syncBar"></div>
+    <div id="syncBadge"><div class="sync-dot"></div> Syncing...</div>
     <div class="navbar">
         <h2>📋 Mark Attendance</h2>
         <a href="teachpage1.html">← Back</a>
@@ -897,198 +1119,14 @@
 
         let currentClassMonth = new Date();
 
-        // Live set of dates where attendance was uploaded (fetched from backend)
-        let classDatesSet = new Set();
-
-        // Fetch all conducted class dates for current subject+type from backend
-        async function loadClassDates() {
-            const params = new URLSearchParams(window.location.search);
-            const subjectId = params.get('subject_id');
-            if (!subjectId) return;
-
-            try {
-                const res = await fetch(
-                    `https://attendance-system-backend-tdbg.onrender.com/get_class_dates/${subjectId}?class_type=${encodeURIComponent(selectedClassType)}`
-                );
-                const dates = await res.json();
-                classDatesSet = new Set(dates);
-                renderClassCalendar(); // re-render calendar with fresh data
-            } catch (e) {
-                console.error('Failed to load class dates:', e);
-            }
+        // ── Sync indicator helpers ──
+        function showSync() {
+            document.getElementById('syncBar').classList.add('show');
+            document.getElementById('syncBadge').classList.add('show');
         }
-
-        function openClassCalendar() {
-            currentClassMonth = new Date();
-            renderClassCalendar();
-            document.getElementById('classCalendarModal').classList.add('show');
-        }
-
-        function closeClassCalendar() {
-            document.getElementById('classCalendarModal').classList.remove('show');
-        }
-
-        function prevClassMonth() {
-            currentClassMonth.setMonth(currentClassMonth.getMonth() - 1);
-            renderClassCalendar();
-        }
-
-        function nextClassMonth() {
-            currentClassMonth.setMonth(currentClassMonth.getMonth() + 1);
-            renderClassCalendar();
-        }
-
-        function renderClassCalendar() {
-            const year = currentClassMonth.getFullYear();
-            const month = currentClassMonth.getMonth();
-            const monthName = currentClassMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            document.getElementById('currentClassMonth').textContent = monthName;
-
-            const grid = document.getElementById('classCalendarGrid');
-            grid.innerHTML = '';
-
-            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            daysOfWeek.forEach(day => {
-                const header = document.createElement('div');
-                header.className = 'calendar-day-header';
-                header.textContent = day;
-                grid.appendChild(header);
-            });
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
-
-            for (let i = 0; i < firstDay; i++) {
-                const empty = document.createElement('div');
-                empty.className = 'calendar-day no-class';
-                empty.textContent = '';
-                grid.appendChild(empty);
-            }
-
-            for (let date = 1; date <= lastDate; date++) {
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-                const conducted = classDatesSet.has(dateStr);
-
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day';
-                if (conducted) {
-                    dayEl.classList.add('conducted');
-                    dayEl.title = 'Class conducted - click to view/edit';
-                    dayEl.textContent = `${date} ✓`;
-                } else {
-                    dayEl.classList.add('no-class');
-                    dayEl.textContent = date;
-                }
-                
-                // All days are clickable to choose attendance date
-                dayEl.onclick = async () => {
-                    document.getElementById('attendanceDate').value = dateStr;
-                    document.getElementById('selectedDateDisplay').textContent = "Date: " + dateStr;
-                    closeClassCalendar();
-                    await dateChanged();
-                };
-                dayEl.style.cursor = 'pointer';
-                
-                grid.appendChild(dayEl);
-            }
-        }
-
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('classCalendarModal');
-            if (event.target === modal) {
-                closeClassCalendar();
-            }
-        });
-
-        
-        let students = [];
-
-        let attendanceData = {};
-        let currentCardIndex = 0;
-
-        // Initialize attendance data
-        function initAttendance() {
-            students.forEach(student => {
-                attendanceData[student.id] = null; // null = not marked, true = present, false = absent
-            });
-        }
-
-        let selectedClassType = 'Lab';
-
-        // Load subject info from URL or session
-        function loadSubjectInfo() {
-            const params = new URLSearchParams(window.location.search);
-            const subjectName = params.get('subject') || localStorage.getItem('selectedSubject') || 'Subject Name';
-            selectedClassType = params.get('type') || localStorage.getItem('selectedType') || 'Lab';
-
-            document.getElementById('subjectName').textContent = subjectName;
-            document.getElementById('subjectType').textContent = `Type: ${selectedClassType}`;
-            document.getElementById('totalStudents').textContent = students.length;
-        }
-
-        // Display student cards
-        function displayCards() {
-            const container = document.getElementById('cardsContainer');
-            container.innerHTML = '';
-
-            students.forEach((student, index) => {
-                const card = document.createElement('div');
-                card.className = `student-card ${index === 0 ? 'active' : ''}`;
-                card.innerHTML = `
-                    <div class="swipe-hint">Swipe right for Present ✓ | Swipe left for Absent ✗</div>
-                    <div class="student-photo">
-                        <span class="student-photo-icon">👤</span>
-                    </div>
-                    <div class="student-name">${student.register}</div>
-                    <div class="student-register">${student.name}</div>
-                    <div class="swipe-buttons">
-                        <button class="btn-present" onclick="markAttendance(${student.id}, true)">✓ Present</button>
-                        <button class="btn-absent" onclick="markAttendance(${student.id}, false)">✗ Absent</button>
-                    </div>
-                `;
-
-                // Touch events for swipe
-                let startX = 0;
-                card.addEventListener('touchstart', (e) => {
-                    startX = e.touches[0].clientX;
-                });
-
-                card.addEventListener('touchend', (e) => {
-                    const endX = e.changedTouches[0].clientX;
-                    const diff = startX - endX;
-
-                    if (Math.abs(diff) > 100) { // Minimum swipe distance
-                        if (diff > 0) {
-                            // Swiped left - mark absent
-                            markAttendance(student.id, false);
-                        } else {
-                            // Swiped right - mark present
-                            markAttendance(student.id, true);
-                        }
-                    }
-                });
-
-                container.appendChild(card);
-            });
-        }
-
-        async function loadStudents() {
-            const params = new URLSearchParams(window.location.search);
-            const subjectId = params.get('subject_id');
-
-            const response = await fetch(`https://attendance-system-backend-tdbg.onrender.com/get_students_by_subject/${subjectId}`);
-            const data = await response.json();
-
-            students = data.map(stu => ({
-                id: stu.id,
-                name: stu.name,
-                register: stu.reg_number,
-                photo: null
-            }));
-
-            document.getElementById('totalStudents').textContent = students.length;
-
-            const today = new Date().toISOString().split('T')[0];
+        function hideSync() {
+            document.getElementById('syncBar').classList.remove('show');
+            document.getElementById('syncBadge').classList.remove('show');
             document.getElementById('attendanceDate').value = today;
             document.getElementById('selectedDateDisplay').textContent = "Date: " + today;
 

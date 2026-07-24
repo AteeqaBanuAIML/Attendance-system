@@ -487,7 +487,6 @@
             text-align: center;
             border-left: 4px solid #667eea;
         }
-
         .stat-label {
             font-size: 12px;
             color: #666;
@@ -503,25 +502,11 @@
         }
 
         @media (max-width: 768px) {
-            .year-buttons-container {
-                grid-template-columns: 1fr;
-            }
-
-            .page-title h1 {
-                font-size: 22px;
-            }
-
-            .stats {
-                grid-template-columns: 1fr;
-            }
-
-            .attendance-table {
-                font-size: 12px;
-            }
-
-            th, td {
-                padding: 10px;
-            }
+            .year-buttons-container { grid-template-columns: 1fr; }
+            .page-title h1 { font-size: 22px; }
+            .stats { grid-template-columns: 1fr; }
+            .attendance-table { font-size: 12px; }
+            th, td { padding: 10px; }
         }
     </style>
 </head>
@@ -531,15 +516,9 @@
         <div style="display: flex; gap: 10px; align-items: center;">
             <button id="menuToggleBtn" onclick="openManageModal()" style="
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 5px;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: transform 0.2s ease;
-                font-family: inherit;
+                color: white; border: none; padding: 10px 20px; border-radius: 5px;
+                font-size: 14px; font-weight: 600; cursor: pointer;
+                transition: transform 0.2s ease; font-family: inherit;
             " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">☰ Menu</button>
             <a href="#" onclick="doLogout()">← Logout</a>
         </div>
@@ -564,6 +543,7 @@
                     </div>
                 </div>
             </div>
+            <button class="btn-edit-profile" id="editProfileBtn" onclick="openEditProfile()" style="display:none;">✏️ Edit Profile</button>
         </div>
 
         <div class="registered-subjects" id="registeredSubjectsSection" style="margin-bottom: 20px; display: none;">
@@ -581,17 +561,17 @@
             <div class="year-card" id="card-1st" data-year="1st">
                 <div class="year-active-badge" id="badge-1st">&#9989; Your Enrolled Year</div>
                 <div class="year-title">&#128218; 1st Year</div>
-                    <div class="dropdown-group">
-                        <div class="dropdown-wrapper">
-                            <label class="dropdown-label">Select Type</label>
-                            <div class="type-options" id="year1Type">
-                                <button type="button" class="type-btn" data-type="lab" onclick="selectType('year1Type','lab')">Lab</button>
-                                <button type="button" class="type-btn" data-type="theory" onclick="selectType('year1Type','theory')">Theory</button>
-                            </div>
+                <div class="dropdown-group">
+                    <div class="dropdown-wrapper">
+                        <label class="dropdown-label">Select Type</label>
+                        <div class="type-options" id="year1Type">
+                            <button type="button" class="type-btn" data-type="lab" onclick="selectType('year1Type','lab')">Lab</button>
+                            <button type="button" class="type-btn" data-type="theory" onclick="selectType('year1Type','theory')">Theory</button>
                         </div>
-                        <button class="view-btn" onclick="viewAttendance('1st', 'year1Type')">View Attendance</button>
-                        <div class="year-lock-banner">🔒 You are not enrolled in 1st Year</div>
                     </div>
+                    <button class="view-btn" onclick="viewAttendance('1st', 'year1Type')">View Attendance</button>
+                    <div class="year-lock-banner">🔒 You are not enrolled in 1st Year</div>
+                </div>
             </div>
 
             <!-- 2nd Year Card -->
@@ -630,6 +610,49 @@
         </div>
     </div>
 
+    <!-- Edit Profile Modal -->
+    <div class="edit-overlay" id="editOverlay">
+        <div class="edit-modal" id="editModal">
+            <div class="edit-modal-header">
+                <h2>✏️ Edit Profile</h2>
+                <button onclick="closeEditProfile()">✕</button>
+            </div>
+            <div class="edit-modal-body">
+                <div class="edit-field">
+                    <label>Register Number (cannot be changed)</label>
+                    <input type="text" id="editRegNum" readonly>
+                    <div class="field-hint">🔒 Your register number is your login ID and cannot be changed.</div>
+                </div>
+                <div class="edit-field">
+                    <label>Full Name *</label>
+                    <input type="text" id="editName" placeholder="Enter your full name">
+                </div>
+                <div class="edit-field">
+                    <label>Department *</label>
+                    <input type="text" id="editDept" placeholder="e.g. Computer Science">
+                </div>
+                <div class="edit-field">
+                    <label>Year *</label>
+                    <select id="editYear">
+                        <option value="1st year">1st Year</option>
+                        <option value="2nd year">2nd Year</option>
+                        <option value="3rd year">3rd Year</option>
+                    </select>
+                </div>
+                <div class="edit-field">
+                    <label>Enrolled Subjects</label>
+                    <div class="edit-subjects-grid" id="editSubjectsGrid">
+                        <p style="color:#aaa;font-size:13px;">Loading subjects...</p>
+                    </div>
+                </div>
+            </div>
+            <div id="editStatusMsg" class="edit-status"></div>
+            <div class="edit-modal-footer">
+                <button class="btn-cancel-profile" onclick="closeEditProfile()">Cancel</button>
+                <button class="btn-save-profile" id="btnSaveProfile" onclick="saveEditProfile()">💾 Save Changes</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ── Auth guard ──────────────────────────────────────────────────
@@ -640,19 +663,20 @@
         })();
 
         function doLogout() {
+            const studentData = JSON.parse(localStorage.getItem('studentData') || 'null');
+            if (studentData) {
+                const regNum = studentData.registerNumber || studentData.identifier || '';
+                if (regNum) localStorage.removeItem(`studentSubjectsCache_${regNum}`);
+            }
             localStorage.removeItem('studentData');
             localStorage.removeItem('userData');
             window.location.href = 'page1.html';
         }
 
-        // Load user info (student or teacher)
         function loadUserInfo() {
             const studentData = JSON.parse(localStorage.getItem('studentData') || 'null');
-            
             if (studentData) {
                 const isTeacher = studentData.role === 'teacher';
-                
-                // Load profile image if exists
                 if (studentData.profileImage) {
                     const profilePic = document.getElementById('profilePic');
                     const img = document.createElement('img');
@@ -660,21 +684,143 @@
                     profilePic.innerHTML = '';
                     profilePic.appendChild(img);
                 }
-
-                // Load user name and role
                 document.getElementById('userName').textContent = studentData.name || 'Unknown User';
                 document.getElementById('userRole').textContent = isTeacher ? 'Teacher' : 'Student';
                 document.getElementById('userId').textContent = studentData.identifier || studentData.registerNumber || '---';
                 const yearEl = document.getElementById('userYear');
                 if (yearEl) yearEl.textContent = studentData.year || 'Unknown';
 
-                // Store for use in viewAttendance (null-safe: elements may not exist in all pages)
+                const editBtn = document.getElementById('editProfileBtn');
+                if (editBtn && !isTeacher) editBtn.style.display = 'inline-flex';
+
                 const studentNameEl = document.getElementById('studentName');
                 const studentRegEl  = document.getElementById('studentReg');
                 if (studentNameEl) studentNameEl.textContent = studentData.name || 'Unknown';
                 if (studentRegEl)  studentRegEl.textContent  = studentData.identifier || studentData.registerNumber || '---';
             }
         }
+
+        const EDIT_API = 'https://attendance-system-backend-tdbg.onrender.com';
+
+        async function openEditProfile() {
+            const studentData = JSON.parse(localStorage.getItem('studentData') || 'null');
+            if (!studentData) return;
+            const regNum = studentData.reg_number || studentData.registerNumber || studentData.identifier || '';
+            document.getElementById('editRegNum').value = regNum;
+            document.getElementById('editName').value   = studentData.name || '';
+            document.getElementById('editDept').value   = studentData.department || studentData.dept || '';
+            const yearRaw = (studentData.year || '1st year').toLowerCase();
+            const yearVal = yearRaw.includes('2') ? '2nd year' : yearRaw.includes('3') ? '3rd year' : '1st year';
+            document.getElementById('editYear').value = yearVal;
+            const statusEl = document.getElementById('editStatusMsg');
+            statusEl.className = 'edit-status';
+            statusEl.textContent = '';
+            document.getElementById('editOverlay').classList.add('show');
+            await loadSubjectsForEdit(regNum);
+        }
+
+        function closeEditProfile() {
+            document.getElementById('editOverlay').classList.remove('show');
+        }
+
+        async function loadSubjectsForEdit(regNum) {
+            const grid = document.getElementById('editSubjectsGrid');
+            grid.innerHTML = '<p style="color:#aaa;font-size:13px;">Loading subjects...</p>';
+            try {
+                const [allRes, myRes] = await Promise.all([
+                    fetch(`${EDIT_API}/get_subjects`),
+                    fetch(`${EDIT_API}/get_student_subjects/${encodeURIComponent(regNum)}`)
+                ]);
+                const allSubjects = await allRes.json();
+                const mySubjects  = await myRes.json();
+                const enrolledIds = new Set(mySubjects.map(s => String(s.subject_id || s.id)));
+                grid.innerHTML = '';
+                if (!allSubjects || allSubjects.length === 0) {
+                    grid.innerHTML = '<p style="color:#aaa;font-size:13px;">No subjects available.</p>';
+                    return;
+                }
+                allSubjects.forEach(sub => {
+                    const isChecked = enrolledIds.has(String(sub.id));
+                    const chip = document.createElement('label');
+                    chip.className = 'edit-subject-chip' + (isChecked ? ' selected' : '');
+                    chip.innerHTML = `
+                        <input type="checkbox" value="${sub.id}" ${isChecked ? 'checked' : ''}>
+                        <div class="chip-check">${isChecked ? '✓' : ''}</div>
+                        <span>${sub.subject_icon || '📘'} ${sub.subject_name}</span>
+                    `;
+                    chip.addEventListener('click', () => {
+                        const cb = chip.querySelector('input');
+                        const chk = chip.querySelector('.chip-check');
+                        setTimeout(() => {
+                            const checked = cb.checked;
+                            chip.classList.toggle('selected', checked);
+                            chk.textContent = checked ? '✓' : '';
+                        }, 0);
+                    });
+                    grid.appendChild(chip);
+                });
+            } catch(err) {
+                grid.innerHTML = '<p style="color:#e65100;font-size:13px;">⚠️ Could not load subjects.</p>';
+            }
+        }
+
+        async function saveEditProfile() {
+            const name   = document.getElementById('editName').value.trim();
+            const dept   = document.getElementById('editDept').value.trim();
+            const year   = document.getElementById('editYear').value;
+            const regNum = document.getElementById('editRegNum').value.trim();
+            const statusEl = document.getElementById('editStatusMsg');
+            const saveBtn  = document.getElementById('btnSaveProfile');
+            if (!name || !dept || !year) {
+                statusEl.className = 'edit-status error';
+                statusEl.textContent = '⚠️ Please fill in all required fields.';
+                return;
+            }
+            const checkedBoxes = document.querySelectorAll('#editSubjectsGrid input[type=checkbox]:checked');
+            const selectedSubjectIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            statusEl.className = 'edit-status';
+            statusEl.textContent = '';
+            try {
+                const res = await fetch(`${EDIT_API}/update_student`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reg_number: regNum, name, dept, year, subjects: selectedSubjectIds })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const stored = JSON.parse(localStorage.getItem('studentData') || '{}');
+                    stored.name = data.student.name;
+                    stored.department = data.student.department;
+                    stored.year = data.student.year;
+                    localStorage.setItem('studentData', JSON.stringify(stored));
+                    localStorage.removeItem(`studentSubjectsCache_${regNum}`);
+                    document.getElementById('userName').textContent = data.student.name;
+                    statusEl.className = 'edit-status success';
+                    statusEl.textContent = '✅ Profile updated successfully!';
+                    setTimeout(() => {
+                        closeEditProfile();
+                        loadUserInfo();
+                        loadRegisteredSubjects();
+                        applyYearRestriction();
+                    }, 1200);
+                } else {
+                    statusEl.className = 'edit-status error';
+                    statusEl.textContent = '❌ ' + (data.message || 'Could not save.');
+                }
+            } catch(err) {
+                statusEl.className = 'edit-status error';
+                statusEl.textContent = '❌ Network error.';
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 Save Changes';
+            }
+        }
+
+        document.getElementById('editOverlay').addEventListener('click', e => {
+            if (e.target === document.getElementById('editOverlay')) closeEditProfile();
+        });
 
         // helper: get selected type from either a <select> or button group
         function getSelectedType(containerId) {
@@ -805,33 +951,26 @@
 
         async function loadRegisteredSubjects() {
             const studentData = JSON.parse(localStorage.getItem('studentData') || 'null');
-            if (!studentData) {
-                return;
-            }
+            if (!studentData) return;
 
             const regNum = studentData.registerNumber || studentData.identifier || '';
-            if (!regNum) {
-                return;
-            }
+            if (!regNum) return;
 
-            try {
-                const response = await fetch(`https://attendance-system-backend-tdbg.onrender.com/get_student_subjects/${encodeURIComponent(regNum)}`);
-                if (!response.ok) throw new Error(`Server error ${response.status}`);
-                const subjects = await response.json();
+            // Per-student cache key so different logins don't share stale data
+            const CACHE_KEY = `studentSubjectsCache_${regNum}`;
 
-                const list = document.getElementById('registeredSubjectsList');
-                const section = document.getElementById('registeredSubjectsSection');
-                const count = document.getElementById('registeredSubjectsCount');
+            const list    = document.getElementById('registeredSubjectsList');
+            const section = document.getElementById('registeredSubjectsSection');
+            const count   = document.getElementById('registeredSubjectsCount');
 
+            function renderSubjectChips(subjects) {
                 if (!subjects || subjects.length === 0) {
                     section.style.display = 'none';
                     return;
                 }
-
                 section.style.display = 'block';
                 list.innerHTML = '';
                 count.textContent = `${subjects.length} subject(s)`;
-
                 subjects.forEach(sub => {
                     const chip = document.createElement('span');
                     chip.style.cssText = 'background:#e8f0fd;color:#1f4ed8;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;';
@@ -839,10 +978,30 @@
                     chip.textContent = `${icon} ${sub.subject_name} (${sub.subject_code || 'N/A'})`;
                     list.appendChild(chip);
                 });
+            }
+
+            // ── Step 1: Show cached data instantly if available ──
+            const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+            if (cached && cached.length > 0) {
+                renderSubjectChips(cached);
+            }
+
+            // ── Step 2: Fetch from server in background ──
+            try {
+                const response = await fetch(`https://attendance-system-backend-tdbg.onrender.com/get_student_subjects/${encodeURIComponent(regNum)}`);
+                if (!response.ok) throw new Error(`Server error ${response.status}`);
+                const fresh = await response.json();
+
+                // ── Step 3: Update only if data actually changed ──
+                const freshJSON  = JSON.stringify(fresh);
+                const cachedJSON = JSON.stringify(cached);
+
+                if (freshJSON !== cachedJSON) {
+                    localStorage.setItem(CACHE_KEY, freshJSON);
+                    renderSubjectChips(fresh);
+                }
             } catch (err) {
                 console.error('Failed to load registered subjects', err);
-                // Show a subtle error note inside the section
-                const section = document.getElementById('registeredSubjectsSection');
                 const list = document.getElementById('registeredSubjectsList');
                 section.style.display = 'block';
                 list.innerHTML = '<span style="color:#e65100;font-size:12px;">⚠️ Could not load subjects — is the backend server running on port 5000?</span>';

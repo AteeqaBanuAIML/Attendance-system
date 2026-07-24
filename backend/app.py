@@ -930,6 +930,83 @@ def delete_student(student_id):
         return jsonify({"error": str(e)}), 400
 
 
+@app.route('/update_student', methods=['POST'])
+def update_student():
+    """
+    Update a student's editable fields: name, department, year, subjects.
+    Reg number is intentionally NOT changeable (it is the identity/login key).
+    Expects JSON: { reg_number, name, dept, year, subjects: [subject_id, ...] }
+    Returns the updated student record on success.
+    """
+    data = request.get_json()
+
+    reg_number = data.get('reg_number', '').strip()
+    name       = data.get('name', '').strip()
+    dept       = data.get('dept', '').strip()
+    year       = data.get('year', '').strip()
+    subjects   = data.get('subjects', [])   # list of subject IDs (integers)
+
+    if not reg_number or not name or not dept or not year:
+        return jsonify({"success": False, "message": "All fields are required."}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor()
+
+    try:
+        # Verify the student exists
+        cursor.execute("SELECT id FROM students WHERE reg_number = %s", (reg_number,))
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            db.close()
+            return jsonify({"success": False, "message": "Student not found."}), 404
+
+        student_id = row[0]
+
+        # Update basic fields (reg_number is NOT updated)
+        cursor.execute(
+            "UPDATE students SET name = %s, department = %s, year = %s WHERE id = %s",
+            (name, dept, year, student_id)
+        )
+
+        # Replace subject enrollments: clear old, insert new
+        cursor.execute("DELETE FROM student_subjects WHERE student_id = %s", (student_id,))
+        for sub_id in subjects:
+            cursor.execute(
+                "INSERT INTO student_subjects (student_id, subject_id) VALUES (%s, %s)",
+                (student_id, int(sub_id))
+            )
+
+        db.commit()
+
+        # Return updated record so the frontend can refresh localStorage
+        cursor.execute(
+            "SELECT id, name, reg_number, department, year FROM students WHERE id = %s",
+            (student_id,)
+        )
+        updated = cursor.fetchone()
+        cursor.close()
+        db.close()
+
+        return jsonify({
+            "success": True,
+            "message": "Profile updated successfully.",
+            "student": {
+                "id":          updated[0],
+                "name":        updated[1],
+                "reg_number":  updated[2],
+                "department":  updated[3],
+                "year":        updated[4]
+            }
+        }), 200
+
+    except mysql.connector.Error as e:
+        db.rollback()
+        cursor.close()
+        db.close()
+        return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500
+
+
 @app.route('/get_student_history/<string:reg_number>', methods=['GET'])
 def get_student_history(reg_number):
     """

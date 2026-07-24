@@ -364,31 +364,57 @@
     }
 
     // ── Step 2: Load subjects ────────────────────────────────────────────────
+    const SUBJECTS_CACHE_KEY = 'subjectsCache';
+    const API_URL = 'https://attendance-system-backend-tdbg.onrender.com/get_subjects';
+
+    function renderPromotionSubjects(subjects) {
+        const container = document.getElementById('subjectsContainer');
+        container.innerHTML = '';
+        subjects.forEach(sub => {
+            const label = document.createElement('label');
+            label.className = 'subject-card';
+            label.innerHTML = `
+                <input type="checkbox" name="subject" value="${sub.id || sub.subject_id}"
+                    onchange="this.parentElement.classList.toggle('selected',this.checked)">
+                ${sub.subject_name || sub.name}
+                <div class="tick-mark">✓</div>`;
+            container.appendChild(label);
+        });
+    }
+
     async function loadSubjects() {
         const container = document.getElementById('subjectsContainer');
-        container.innerHTML = '<p style="color:#999;font-size:13px;text-align:center;grid-column:1/-1;">Loading subjects...</p>';
-        try {
-            const res      = await fetch('https://attendance-system-backend-tdbg.onrender.com/get_subjects');
-            const subjects = await res.json();
-            container.innerHTML = '';
 
-            if (!subjects || subjects.length === 0) {
-                container.innerHTML = '<p style="color:#e65100;font-size:13px;grid-column:1/-1;">No subjects found. Please contact your teacher.</p>';
-                return;
+        // ── Step 1: Show cached data instantly if available ──
+        const cached = JSON.parse(localStorage.getItem(SUBJECTS_CACHE_KEY) || 'null');
+        if (cached && cached.length > 0) {
+            renderPromotionSubjects(cached);
+        } else {
+            container.innerHTML = '<p style="color:#999;font-size:13px;text-align:center;grid-column:1/-1;">Loading subjects...</p>';
+        }
+
+        // ── Step 2: Fetch from server in background ──
+        try {
+            const res      = await fetch(API_URL);
+            const fresh    = await res.json();
+
+            // ── Step 3: Update only if data changed ──
+            const freshJSON  = JSON.stringify(fresh);
+            const cachedJSON = JSON.stringify(cached);
+
+            if (freshJSON !== cachedJSON) {
+                localStorage.setItem(SUBJECTS_CACHE_KEY, JSON.stringify(fresh));
+                renderPromotionSubjects(fresh);
             }
 
-            subjects.forEach(sub => {
-                const label = document.createElement('label');
-                label.className = 'subject-card';
-                label.innerHTML = `
-                    <input type="checkbox" name="subject" value="${sub.id}"
-                        onchange="this.parentElement.classList.toggle('selected',this.checked)">
-                    ${sub.subject_name}
-                    <div class="tick-mark">✓</div>`;
-                container.appendChild(label);
-            });
+            if (!fresh || fresh.length === 0) {
+                container.innerHTML = '<p style="color:#e65100;font-size:13px;grid-column:1/-1;">No subjects found. Please contact your teacher.</p>';
+            }
         } catch (err) {
-            container.innerHTML = '<p style="color:#e65100;font-size:13px;grid-column:1/-1;">Could not load subjects. Is the backend running?</p>';
+            console.warn('[promotion] Background fetch failed, using cache:', err);
+            if (!cached || cached.length === 0) {
+                container.innerHTML = '<p style="color:#e65100;font-size:13px;grid-column:1/-1;">Could not load subjects. Is the backend running?</p>';
+            }
         }
     }
 
