@@ -207,6 +207,12 @@
             transform: translateY(0);
         }
 
+        .login-button:disabled {
+            opacity: 0.65;
+            cursor: wait;
+            transform: none;
+        }
+
         .info-text {
             text-align: center;
             color: #999;
@@ -316,7 +322,7 @@
             </div>
 
             <!-- Login Button -->
-            <button type="submit" class="login-button">Login</button>
+            <button type="submit" class="login-button" id="loginButton">Login</button>
         </form>
 
         <p class="info-text" id="infoText">Your credentials are securely stored</p>
@@ -445,6 +451,13 @@
                 return;
             }
 
+            const loginButton = document.getElementById('loginButton');
+
+            const resetLoginButton = () => {
+                loginButton.disabled = false;
+                loginButton.textContent = 'Login';
+            };
+
             // Get profile image if exists
             const profileImage = selectedRole === 'student' ?
                 (profilePic.querySelector('img')?.src || null) : null;
@@ -455,6 +468,8 @@
                     alert('Please enter your register number');
                     return;
                 }
+                loginButton.disabled = true;
+                loginButton.textContent = 'Logging in...';
                 // Backend validation for student
                 fetch('https://attendance-system-backend-tdbg.onrender.com/student_login', {
                     method: 'POST',
@@ -482,11 +497,13 @@
                         }, 500);
                     } else {
                         alert(data.message || 'Login failed. Are you registered?');
+                        resetLoginButton();
                     }
                 })
                 .catch(err => {
                     console.error('Error logging in:', err);
                     alert('Backend error. Is the server running?');
+                    resetLoginButton();
                 });
             } else {
                 // Teacher login — check shared password then auto-save to DB
@@ -503,6 +520,9 @@
                     alert('Incorrect password. Access denied.');
                     return;
                 }
+
+                loginButton.disabled = true;
+                loginButton.textContent = 'Logging in...';
 
                 // Password correct — save name+email to teachers table and grant access
                 fetch('https://attendance-system-backend-tdbg.onrender.com/teacher_login', {
@@ -525,9 +545,13 @@
                         setTimeout(() => { window.location.href = 'teachpage1.html'; }, 300);
                     } else {
                         alert('Login error: ' + (data.message || 'Please try again.'));
+                        resetLoginButton();
                     }
                 })
-                .catch(() => alert('Backend error. Is the server running?'));
+                .catch(() => {
+                    alert('Backend error. Is the server running?');
+                    resetLoginButton();
+                });
             }
         }
     </script>

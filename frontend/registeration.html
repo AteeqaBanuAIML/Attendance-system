@@ -112,6 +112,12 @@
             transform: translateY(0);
         }
 
+        .submit-button:disabled {
+            opacity: 0.65;
+            cursor: wait;
+            transform: none;
+        }
+
         .info-text {
             text-align: center;
             color: #999;
@@ -291,7 +297,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="submit-button">Submit</button>
+            <button type="submit" class="submit-button" id="registerSubmitButton">Submit</button>
         </form>
 
         <p class="info-text">Once registered, you can login from the home page.</p>
@@ -330,23 +336,35 @@
                 return;
             }
 
-            const response = await fetch("https://attendance-system-backend-tdbg.onrender.com/register_student", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ name, number, dept, year, subjects })
-            });
+            const submitButton = document.getElementById('registerSubmitButton');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitted';
 
-            const data = await response.json();
+            try {
+                const response = await fetch("https://attendance-system-backend-tdbg.onrender.com/register_student", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ name, number, dept, year, subjects })
+                });
 
-            alert(data.message || data.error || 'Registration failed.');
+                const data = await response.json();
 
-            if (!response.ok) {
-                return;
+                alert(data.message || data.error || 'Registration failed.');
+
+                if (!response.ok) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Submit';
+                    return;
+                }
+
+                window.location.href = "page1.html";
+            } catch (error) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit';
+                alert('Registration failed. Please check your connection and try again.');
             }
-
-            window.location.href = "page1.html";
         }
 
         // ── Smart subject cache (shared with teachpage1) ─────────────────
@@ -369,6 +387,11 @@
             });
         }
 
+        function showSubjectsLoading() {
+            document.getElementById('subjectsContainer').innerHTML =
+                '<p style="color:#666;font-size:13px;text-align:center;">Loading subjects...</p>';
+        }
+
         // Trigger on page load
         window.addEventListener('DOMContentLoaded', function() {
             loadSubjectsForRegistration();
@@ -378,6 +401,8 @@
         });
 
         async function loadSubjectsForRegistration() {
+            showSubjectsLoading();
+
             // ── Step 1: Show cached data instantly if available ──
             const cached = JSON.parse(localStorage.getItem(SUBJECTS_CACHE_KEY) || 'null');
             if (cached && cached.length > 0) {
