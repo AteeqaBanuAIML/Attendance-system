@@ -1118,6 +1118,97 @@
         })();
 
         let currentClassMonth = new Date();
+        const API = 'https://attendance-system-backend-tdbg.onrender.com';
+        const params = new URLSearchParams(window.location.search);
+        const subjectId = params.get('subject_id');
+        const subjectNameParam = params.get('subject') || localStorage.getItem('selectedSubject') || 'Subject';
+        const selectedClassType = params.get('type') || localStorage.getItem('selectedType') || 'Theory';
+        const today = new Date().toISOString().split('T')[0];
+        let students = [];
+        let attendanceData = {};
+        let currentCardIndex = 0;
+        let classDatesSet = new Set();
+
+        function loadSubjectInfo() {
+            document.getElementById('subjectName').textContent = decodeURIComponent(subjectNameParam);
+            document.getElementById('subjectType').textContent = 'Type: ' + selectedClassType;
+        }
+
+        async function loadStudents() {
+            const cacheKey = `studentsBySubjectCache_${subjectId}`;
+            const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+
+            const applyStudents = (data) => {
+                students = data.map(student => ({
+                    id: student.id,
+                    name: student.name,
+                    register: student.reg_number
+                }));
+                document.getElementById('totalStudents').textContent = students.length;
+            };
+
+            if (Array.isArray(cached)) {
+                applyStudents(cached);
+            }
+
+            showSync();
+            try {
+                const response = await fetch(`${API}/get_students_by_subject/${subjectId}`);
+                const fresh = await response.json();
+                if (!Array.isArray(cached) || JSON.stringify(fresh) !== JSON.stringify(cached)) {
+                    localStorage.setItem(cacheKey, JSON.stringify(fresh));
+                    applyStudents(fresh);
+                }
+                document.getElementById('attendanceDate').value = today;
+                document.getElementById('selectedDateDisplay').textContent = 'Date: ' + today;
+                await loadAttendanceForDate();
+            } catch (error) {
+                console.error('loadStudents error:', error);
+                if (!Array.isArray(cached)) {
+                    document.getElementById('totalStudents').textContent = 'Error';
+                } else {
+                    document.getElementById('attendanceDate').value = today;
+                    document.getElementById('selectedDateDisplay').textContent = 'Date: ' + today;
+                    await loadAttendanceForDate();
+                }
+            } finally {
+                hideSync();
+            }
+        }
+
+        async function loadClassDates() {
+            try {
+                const response = await fetch(`${API}/get_class_dates/${subjectId}?class_type=${encodeURIComponent(selectedClassType)}`);
+                classDatesSet = new Set(await response.json());
+            } catch (error) {
+                console.error('loadClassDates error:', error);
+            }
+        }
+
+        function displayCards() {
+            const container = document.getElementById('cardsContainer');
+            container.innerHTML = '';
+            if (students.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;background:white;border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,.15)"><div style="font-size:40px;margin-bottom:12px">&#128101;</div><div style="font-size:16px;font-weight:600">No students enrolled</div></div>';
+                return;
+            }
+            students.forEach((student, index) => {
+                const card = document.createElement('div');
+                card.className = 'student-card' + (index === currentCardIndex ? ' active' : '');
+                card.style.zIndex = students.length - index;
+                card.innerHTML = `
+                    <div class="student-photo"><span class="student-photo-icon">&#128100;</span></div>
+                    <div class="student-name">${student.name}</div>
+                    <div class="student-register">${student.register}</div>
+                    <div class="student-number">${index + 1} / ${students.length}</div>
+                    <div class="swipe-hint">&#8592; Absent &nbsp;|&nbsp; Present &#8594;</div>
+                    <div class="action-buttons">
+                        <button class="btn-absent" onclick="markAttendance(${student.id}, false)">&#10007; Absent</button>
+                        <button class="btn-present" onclick="markAttendance(${student.id}, true)">&#10003; Present</button>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
 
         // ── Sync indicator helpers ──
         function showSync() {
@@ -1165,6 +1256,8 @@
         }
 
         async function dateChanged() {
+            const date = document.getElementById('attendanceDate').value;
+            document.getElementById('selectedDateDisplay').textContent = 'Date: ' + date;
             await loadAttendanceForDate();
         }
 
