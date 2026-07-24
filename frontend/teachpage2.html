@@ -1195,17 +1195,32 @@
             students.forEach((student, index) => {
                 const card = document.createElement('div');
                 card.className = 'student-card' + (index === currentCardIndex ? ' active' : '');
+                card.dataset.studentId = student.id;
                 card.style.zIndex = students.length - index;
                 card.innerHTML = `
-                    <div class="student-photo"><span class="student-photo-icon">&#128100;</span></div>
+                    <div class="swipe-hint">Swipe right for Present &#10003; | Swipe left for Absent &#10007;</div>
+                    <div class="student-photo">
+                        <span class="student-photo-icon">&#128100;</span>
+                    </div>
                     <div class="student-name">${student.name}</div>
                     <div class="student-register">${student.register}</div>
-                    <div class="student-number">${index + 1} / ${students.length}</div>
-                    <div class="swipe-hint">&#8592; Absent &nbsp;|&nbsp; Present &#8594;</div>
-                    <div class="action-buttons">
-                        <button class="btn-absent" onclick="markAttendance(${student.id}, false)">&#10007; Absent</button>
+                    <div class="swipe-buttons">
                         <button class="btn-present" onclick="markAttendance(${student.id}, true)">&#10003; Present</button>
+                        <button class="btn-absent" onclick="markAttendance(${student.id}, false)">&#10007; Absent</button>
                     </div>`;
+
+                let startX = 0;
+                card.addEventListener('touchstart', event => {
+                    startX = event.touches[0].clientX;
+                }, { passive: true });
+
+                card.addEventListener('touchend', event => {
+                    const diff = startX - event.changedTouches[0].clientX;
+                    if (Math.abs(diff) > 100 && index === currentCardIndex) {
+                        markAttendance(student.id, diff < 0);
+                    }
+                }, { passive: true });
+
                 container.appendChild(card);
             });
         }
