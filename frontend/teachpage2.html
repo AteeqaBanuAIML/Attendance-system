@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1010,8 +1010,8 @@
     <div id="syncBar"></div>
     <div id="syncBadge"><div class="sync-dot"></div> Syncing...</div>
     <div class="navbar">
-        <h2>ðŸ“‹ Mark Attendance</h2>
-        <a href="teachpage1.html">â† Back</a>
+        <h2>📋 Mark Attendance</h2>
+        <a href="teachpage1.html">← Back</a>
     </div>
 
     <div class="container">
@@ -1023,7 +1023,7 @@
                     <input type="hidden" id="attendanceDate" value="">
                     <div id="selectedDateDisplay" style="margin-top: 10px; font-size: 14px; font-weight: 600; color: #667eea;">Select a date</div>
                 </div>
-                <button class="calendar-btn-header" onclick="openClassCalendar()">ðŸ“… Select Date</button>
+                <button class="calendar-btn-header" onclick="openClassCalendar()">📅 Select Date</button>
             </div>
             <div class="strength-box">
                 Total Students: <span id="totalStudents">0</span>
@@ -1056,11 +1056,11 @@
         </div>
 
         <!-- Submit Button -->
-        <button class="submit-btn" id="submitBtn" onclick="submitAttendance()" disabled>ðŸ“¤ Upload Attendance</button>
+        <button class="submit-btn" id="submitBtn" onclick="submitAttendance()" disabled>📤 Upload Attendance</button>
 
         <!-- Completed Message -->
         <div class="completed-message" id="completedMessage">
-            <div class="completed-icon">âœ…</div>
+            <div class="completed-icon">✅</div>
             <div class="completed-text">Attendance Submitted Successfully!</div>
             <div class="completed-subtext">All student attendance records have been saved.</div>
             <button class="btn-back" onclick="window.location.href='teachpage1.html'">Back to Dashboard</button>
@@ -1072,7 +1072,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">Present Students</h2>
-                <button class="modal-close" onclick="closeStudentList()">Ã—</button>
+                <button class="modal-close" onclick="closeStudentList()">×</button>
             </div>
             <div class="modal-body">
                 <div class="student-list" id="studentList">
@@ -1087,12 +1087,12 @@
         <div class="calendar-content">
             <div class="calendar-header">
                 <h2>Class Schedule Calendar</h2>
-                <button class="calendar-close" onclick="closeClassCalendar()">Ã—</button>
+                <button class="calendar-close" onclick="closeClassCalendar()">×</button>
             </div>
             <div class="calendar-nav">
-                <button onclick="prevClassMonth()">â† Prev</button>
+                <button onclick="prevClassMonth()">← Prev</button>
                 <span class="calendar-month" id="currentClassMonth">January 2026</span>
-                <button onclick="nextClassMonth()">Next â†’</button>
+                <button onclick="nextClassMonth()">Next →</button>
             </div>
             <div class="calendar-grid" id="classCalendarGrid">
             </div>
@@ -1110,162 +1110,83 @@
     </div>
 
     <script>
-        // Auth guard
+        // ── Auth guard ──────────────────────────────────────────────────
         (function guardTeacher() {
             if (!localStorage.getItem('teacherData')) {
                 window.location.replace('page1.html');
             }
         })();
 
-        // Constants from URL
-        const urlParams         = new URLSearchParams(window.location.search);
-        const subjectId         = urlParams.get('subject_id');
-        const subjectNameParam  = decodeURIComponent(urlParams.get('subject') || 'Subject');
-        const selectedClassType = urlParams.get('type') || 'Theory';
-        const today             = new Date().toISOString().split('T')[0];
-        const API               = 'https://attendance-system-backend-tdbg.onrender.com';
-
-        // State
-        let students         = [];
-        let attendanceData   = {};
-        let currentCardIndex = 0;
-        let classDatesSet    = new Set();
         let currentClassMonth = new Date();
 
-        // Sync indicator helpers
+        // ── Sync indicator helpers ──
         function showSync() {
-            const b = document.getElementById('syncBar');
-            const d = document.getElementById('syncBadge');
-            if (b) b.classList.add('show');
-            if (d) d.classList.add('show');
+            document.getElementById('syncBar').classList.add('show');
+            document.getElementById('syncBadge').classList.add('show');
         }
         function hideSync() {
-            const b = document.getElementById('syncBar');
-            const d = document.getElementById('syncBadge');
-            if (b) b.classList.remove('show');
-            if (d) d.classList.remove('show');
+            document.getElementById('syncBar').classList.remove('show');
+            document.getElementById('syncBadge').classList.remove('show');
         }
 
-        // Load subject info from URL params
-        function loadSubjectInfo() {
-            document.getElementById('subjectName').textContent = subjectNameParam;
-            document.getElementById('subjectType').textContent = 'Type: ' + selectedClassType;
-        }
-
-        // Load students enrolled in this subject
-        async function loadStudents() {
-            showSync();
-            try {
-                const res  = await fetch(API + '/get_students_by_subject/' + subjectId);
-                const data = await res.json();
-                students = data.map(function(s) {
-                    return { id: s.id, name: s.name, register: s.reg_number };
-                });
-                document.getElementById('totalStudents').textContent = students.length;
-                document.getElementById('attendanceDate').value = today;
-                document.getElementById('selectedDateDisplay').textContent = 'Date: ' + today;
-                await loadAttendanceForDate();
-            } catch (err) {
-                console.error('loadStudents error:', err);
-                document.getElementById('totalStudents').textContent = 'Error';
-            } finally {
-                hideSync();
-            }
-        }
-
-        // Load class dates already conducted
-        async function loadClassDates() {
-            try {
-                const res   = await fetch(API + '/get_class_dates/' + subjectId + '?class_type=' + encodeURIComponent(selectedClassType));
-                const dates = await res.json();
-                classDatesSet = new Set(dates);
-            } catch (err) {
-                console.error('loadClassDates error:', err);
-            }
-        }
-
-        // Load attendance for selected date
         async function loadAttendanceForDate() {
             const date = document.getElementById('attendanceDate').value;
-            if (!date) return;
-            showSync();
-            try {
-                const res          = await fetch(API + '/get_attendance_by_date/' + subjectId + '/' + date + '?class_type=' + encodeURIComponent(selectedClassType));
-                const existingData = await res.json();
-                attendanceData = {};
-                students.forEach(function(student) {
-                    var status = existingData[String(student.id)];
-                    if (status === 'present')      attendanceData[student.id] = true;
-                    else if (status === 'absent')  attendanceData[student.id] = false;
-                    else                           attendanceData[student.id] = null;
-                });
-                currentCardIndex = 0;
-                displayCards();
-                updateDisplay();
-                var marked = Object.values(attendanceData).filter(function(v) { return v !== null; }).length;
-                if (marked === students.length && students.length > 0) {
-                    currentCardIndex = students.length;
-                    showCompletionMessage();
-                } else {
-                    document.getElementById('cardsContainer').style.display    = 'block';
-                    document.getElementById('statsSection').style.display      = 'grid';
-                    document.getElementById('completionSection').style.display = 'block';
-                    var submitBtn = document.getElementById('submitBtn');
-                    submitBtn.style.display = 'block';
-                    submitBtn.disabled = true;
-                    document.getElementById('completedMessage').classList.remove('show');
-                }
-            } catch (err) {
-                console.error('loadAttendanceForDate error:', err);
-            } finally {
-                hideSync();
-            }
-        }
-
-        // Called by calendar picker
-        async function dateChanged() {
-            var date = document.getElementById('attendanceDate').value;
-            document.getElementById('selectedDateDisplay').textContent = 'Date: ' + date;
-            await loadAttendanceForDate();
-        }
-
-        // Render swipe cards
-        function displayCards() {
-            var container = document.getElementById('cardsContainer');
-            container.innerHTML = '';
-            if (students.length === 0) {
-                container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;background:white;border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,.15)"><div style="font-size:40px;margin-bottom:12px">&#128101;</div><div style="font-size:16px;font-weight:600">No students enrolled</div></div>';
-                return;
-            }
-            students.forEach(function(student, index) {
-                var card = document.createElement('div');
-                card.className = 'student-card' + (index === currentCardIndex ? ' active' : '');
-                card.style.zIndex = students.length - index;
-                card.innerHTML =
-                    '<div class="student-photo"><span class="student-photo-icon">&#128100;</span></div>' +
-                    '<div class="student-name">' + student.name + '</div>' +
-                    '<div class="student-register">' + student.register + '</div>' +
-                    '<div class="student-number">' + (index + 1) + ' / ' + students.length + '</div>' +
-                    '<div class="swipe-hint">&#8592; Absent &nbsp;|&nbsp; Present &#8594;</div>' +
-                    '<div class="action-buttons">' +
-                        '<button class="btn-absent"  onclick="markAttendance(' + student.id + ', false)">&#10007; Absent</button>' +
-                        '<button class="btn-present" onclick="markAttendance(' + student.id + ', true)">&#10003; Present</button>' +
-                    '</div>';
-                container.appendChild(card);
+            const params = new URLSearchParams(window.location.search);
+            const subjectId = params.get('subject_id');
+            
+            const response = await fetch(`https://attendance-system-backend-tdbg.onrender.com/get_attendance_by_date/${subjectId}/${date}?class_type=${encodeURIComponent(selectedClassType)}`);
+            const existingData = await response.json();
+            
+            attendanceData = {};
+            students.forEach(student => {
+                const status = existingData[student.id];
+                if (status === 'present') attendanceData[student.id] = true;
+                else if (status === 'absent') attendanceData[student.id] = false;
+                else attendanceData[student.id] = null;
             });
+
+            currentCardIndex = 0;
+            displayCards();
+            updateDisplay();
+            
+            const marked = Object.values(attendanceData).filter(v => v !== null).length;
+            if (marked === students.length && students.length > 0) {
+                currentCardIndex = students.length;
+                showCompletionMessage();
+            } else {
+                document.getElementById('cardsContainer').style.display = 'block';
+                document.getElementById('statsSection').style.display = 'block';
+                document.getElementById('completionSection').style.display = 'block';
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.style.display = 'block';
+                submitBtn.disabled = true;
+                document.getElementById('completedMessage').classList.remove('show');
+            }
+        }
+
+        async function dateChanged() {
+            await loadAttendanceForDate();
         }
 
         // Mark attendance
         function markAttendance(studentId, isPresent) {
             attendanceData[studentId] = isPresent;
-            var cards       = document.querySelectorAll('.student-card');
-            var currentCard = cards[currentCardIndex];
-            if (currentCard) {
-                currentCard.classList.add(isPresent ? 'swiped-right' : 'swiped-left');
+
+            // Animate card out
+            const cards = document.querySelectorAll('.student-card');
+            const currentCard = cards[currentCardIndex];
+            
+            if (isPresent) {
+                currentCard.classList.add('swiped-right');
+            } else {
+                currentCard.classList.add('swiped-left');
             }
-            setTimeout(function() {
+
+            // Move to next card after animation
+            setTimeout(() => {
                 currentCardIndex++;
                 updateDisplay();
+                
                 if (currentCardIndex < students.length) {
                     showNextCard();
                 } else {
@@ -1276,184 +1197,159 @@
 
         // Show next card
         function showNextCard() {
-            var cards = document.querySelectorAll('.student-card');
-            cards.forEach(function(card, index) {
+            const cards = document.querySelectorAll('.student-card');
+            cards.forEach((card, index) => {
                 card.classList.remove('active');
-                if (index === currentCardIndex) card.classList.add('active');
+                if (index === currentCardIndex) {
+                    card.classList.add('active');
+                }
             });
         }
 
-        // Update stats display
+        // Update display stats
         function updateDisplay() {
-            var present = Object.values(attendanceData).filter(function(v) { return v === true; }).length;
-            var absent  = Object.values(attendanceData).filter(function(v) { return v === false; }).length;
-            var marked  = present + absent;
-            var total   = students.length;
+            const present = Object.values(attendanceData).filter(v => v === true).length;
+            const absent = Object.values(attendanceData).filter(v => v === false).length;
+            const marked = present + absent;
+            const total = students.length;
+
             document.getElementById('presentCount').textContent = present;
-            document.getElementById('absentCount').textContent  = absent;
-            document.getElementById('progressText').textContent = marked + ' / ' + total + ' marked';
-            document.getElementById('progressFill').style.width = (total > 0 ? (marked / total) * 100 : 0) + '%';
-            if (marked === total && total > 0) {
+            document.getElementById('absentCount').textContent = absent;
+            document.getElementById('progressText').textContent = `${marked} / ${total} marked`;
+            
+            const progressPercent = (marked / total) * 100;
+            document.getElementById('progressFill').style.width = progressPercent + '%';
+
+            // Enable submit button when all marked
+            if (marked === total) {
                 document.getElementById('submitBtn').disabled = false;
             }
         }
 
         // Show completion message
         function showCompletionMessage() {
-            document.getElementById('cardsContainer').style.display    = 'none';
-            document.getElementById('statsSection').style.display      = 'grid';
+            document.getElementById('cardsContainer').style.display = 'none';
+            document.getElementById('statsSection').style.display = 'grid';
             document.getElementById('completionSection').style.display = 'block';
-            var submitBtn = document.getElementById('submitBtn');
+            const submitBtn = document.getElementById('submitBtn');
             submitBtn.style.display = 'block';
             submitBtn.disabled = false;
         }
 
         // Submit attendance
         async function submitAttendance() {
-            var date = document.getElementById('attendanceDate').value;
-            if (!date) { alert('Please select a date first.'); return; }
-            var payload = {};
-            for (var id in attendanceData) {
-                if (attendanceData[id] === true)       payload[id] = 'present';
-                else if (attendanceData[id] === false) payload[id] = 'absent';
+            const params = new URLSearchParams(window.location.search);
+            const subjectId = params.get('subject_id');
+            const date = document.getElementById('attendanceDate').value;
+
+            const payload = {};
+            for (const [id, val] of Object.entries(attendanceData)) {
+                if (val === true) payload[id] = "present";
+                else if (val === false) payload[id] = "absent";
             }
-            showSync();
+
             try {
-                var res = await fetch(API + '/submit_attendance', {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const submitRes = await fetch("https://attendance-system-backend-tdbg.onrender.com/submit_attendance", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         subject_id: subjectId,
-                        date:       date,
+                        date: date,
                         class_type: selectedClassType,
                         attendance: payload
                     })
                 });
-                if (res.ok) {
+
+                if (submitRes.ok) {
                     classDatesSet.add(date);
                     document.getElementById('submitBtn').style.display = 'none';
                     document.getElementById('completedMessage').classList.add('show');
                 } else {
-                    alert('Failed to save attendance. Please try again.');
+                    alert('Failed to save attendance. Please check the backend server and try again.');
                 }
             } catch (err) {
-                alert('Network error. Please check your connection.');
-            } finally {
-                hideSync();
+                alert('Network error. Please check if the backend server is running and try again.');
             }
         }
 
         // Show student list modal
         function showStudentList(type) {
-            var list = type === 'present'
-                ? students.filter(function(s) { return attendanceData[s.id] === true; })
-                : students.filter(function(s) { return attendanceData[s.id] === false; });
-            document.getElementById('modalTitle').textContent =
-                type === 'present' ? 'Present Students' : 'Absent Students';
-            var div = document.getElementById('studentList');
-            if (list.length === 0) {
-                div.innerHTML = '<div class="empty-list"><div class="empty-list-icon">' +
-                    (type === 'present' ? '&#128203;' : '&#10060;') +
-                    '</div><div class="empty-list-text">No ' + type + ' students yet</div></div>';
+            const presentStudents = students.filter(s => attendanceData[s.id] === true);
+            const absentStudents = students.filter(s => attendanceData[s.id] === false);
+            
+            const listToShow = type === 'present' ? presentStudents : absentStudents;
+            const title = type === 'present' ? 'Present Students' : 'Absent Students';
+
+            document.getElementById('modalTitle').textContent = title;
+
+            const studentListDiv = document.getElementById('studentList');
+            
+            if (listToShow.length === 0) {
+                studentListDiv.innerHTML = `
+                    <div class="empty-list">
+                        <div class="empty-list-icon">${type === 'present' ? '📋' : '❌'}</div>
+                        <div class="empty-list-text">No ${type} students yet</div>
+                    </div>
+                `;
             } else {
-                div.innerHTML = list.map(function(student) {
-                    var oppType = type === 'present' ? 'absent' : 'present';
-                    var badge   = type === 'present' ? '&#10003; Present' : '&#10007; Absent';
-                    var btnTxt  = 'Mark as ' + (type === 'present' ? 'Absent' : 'Present');
-                    return '<div class="student-item ' + type + '">' +
-                        '<div class="student-item-info">' +
-                            '<div class="student-item-name">'     + student.name     + '</div>' +
-                            '<div class="student-item-register">' + student.register + '</div>' +
-                        '</div>' +
-                        '<div class="student-item-actions">' +
-                            '<div class="student-item-badge ' + type + '">' + badge + '</div>' +
-                            '<button class="toggle-btn ' + oppType + '" onclick="toggleAttendance(' + student.id + ')">' + btnTxt + '</button>' +
-                        '</div>' +
-                    '</div>';
-                }).join('');
+                studentListDiv.innerHTML = listToShow.map(student => `
+                    <div class="student-item ${type}">
+                        <div class="student-item-info">
+                            <div class="student-item-name">${student.name}</div>
+                            <div class="student-item-register">${student.register}</div>
+                        </div>
+                        <div class="student-item-actions">
+                            <div class="student-item-badge ${type}">
+                                ${type === 'present' ? '✓ Present' : '✗ Absent'}
+                            </div>
+                            <button class="toggle-btn ${type === 'present' ? 'absent' : 'present'}" onclick="toggleAttendance(${student.id})">
+                                Mark as ${type === 'present' ? 'Absent' : 'Present'}
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
             }
+
             document.getElementById('studentModal').classList.add('show');
         }
 
+        
+
+        // Close modal
         function closeStudentList() {
             document.getElementById('studentModal').classList.remove('show');
         }
 
+        // Toggle attendance status
         function toggleAttendance(studentId) {
+            // Toggle the attendance status
             attendanceData[studentId] = !attendanceData[studentId];
+            
+            // Update display stats
             updateDisplay();
-            var modal = document.getElementById('studentModal');
+            
+            // Refresh the modal content
+            const modal = document.getElementById('studentModal');
             if (modal.classList.contains('show')) {
-                var type = document.getElementById('modalTitle').textContent
-                    .toLowerCase().indexOf('present') >= 0 ? 'present' : 'absent';
+                const title = document.getElementById('modalTitle').textContent;
+                const type = title.toLowerCase().includes('present') ? 'present' : 'absent';
                 showStudentList(type);
             }
         }
 
-        window.addEventListener('click', function(e) {
-            if (e.target === document.getElementById('studentModal')) closeStudentList();
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('studentModal');
+            if (event.target === modal) {
+                closeStudentList();
+            }
         });
 
-        // Calendar functions
-        function openClassCalendar() {
-            renderClassCalendar();
-            document.getElementById('classCalendarModal').classList.add('show');
-        }
-
-        function closeClassCalendar() {
-            document.getElementById('classCalendarModal').classList.remove('show');
-        }
-
-        function prevClassMonth() {
-            currentClassMonth.setMonth(currentClassMonth.getMonth() - 1);
-            renderClassCalendar();
-        }
-
-        function nextClassMonth() {
-            currentClassMonth.setMonth(currentClassMonth.getMonth() + 1);
-            renderClassCalendar();
-        }
-
-        function renderClassCalendar() {
-            var year  = currentClassMonth.getFullYear();
-            var month = currentClassMonth.getMonth();
-            var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-            document.getElementById('currentClassMonth').textContent = monthNames[month] + ' ' + year;
-            var firstDay  = new Date(year, month, 1).getDay();
-            var daysInMon = new Date(year, month + 1, 0).getDate();
-            var selDate   = document.getElementById('attendanceDate').value;
-            var html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;">';
-            ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(function(d) {
-                html += '<div style="font-size:11px;font-weight:700;color:#666;padding:4px;">' + d + '</div>';
-            });
-            for (var i = 0; i < firstDay; i++) html += '<div></div>';
-            for (var d = 1; d <= daysInMon; d++) {
-                var ds = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-                var conducted = classDatesSet.has(ds);
-                var isToday   = ds === today;
-                var isSel     = ds === selDate;
-                var st = 'padding:8px 4px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid transparent;';
-                if (conducted) st += 'background:#e8f5e9;border-color:#2e7d32;color:#2e7d32;';
-                else if (isSel) st += 'background:#eef0ff;border-color:#667eea;color:#667eea;';
-                else st += 'background:#f8f9fa;color:#333;';
-                if (isToday) st += 'outline:2px solid #667eea;outline-offset:2px;';
-                html += '<div style="' + st + '" onclick="pickDate(\'' + ds + '\')">' + d + '</div>';
-            }
-            html += '</div>';
-            document.getElementById('classCalendarGrid').innerHTML = html;
-        }
-
-        function pickDate(dateStr) {
-            document.getElementById('attendanceDate').value = dateStr;
-            document.getElementById('selectedDateDisplay').textContent = 'Date: ' + dateStr;
-            closeClassCalendar();
-            loadAttendanceForDate();
-        }
-
-        // Initialise on load
-        window.addEventListener('DOMContentLoaded', async function() {
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', async () => {
             loadSubjectInfo();
             await loadStudents();
+            // Load calendar conducted dates from backend AFTER selectedClassType is set
             await loadClassDates();
         });
     </script>
