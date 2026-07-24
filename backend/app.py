@@ -250,38 +250,48 @@ def delete_subject(subject_id):
 #Register student API
 @app.route('/register_student', methods=['POST'])
 def register_student():
-    data = request.json
+    data = request.get_json() or {}
 
-    name = data['name']
-    number = data['number']
-    dept = data['dept']
-    year = data['year']
-    subjects = data['subjects']   # list of subject IDs
+    name = (data.get('name') or '').strip()
+    number = (data.get('number') or '').strip()
+    dept = (data.get('dept') or '').strip()
+    year = (data.get('year') or '').strip()
+    subjects = data.get('subjects', [])   # list of subject IDs
+
+    if not name or not number or not dept or not year or not subjects:
+        return jsonify({"message": "All fields are required, including at least one subject."}), 400
 
     db = get_db_connection()
     cursor = db.cursor()
 
-    # Insert student
-    cursor.execute(
-        "INSERT INTO students (name, reg_number, department, year) VALUES (%s, %s, %s, %s)",
-        (name, number, dept, year)
-    )
-
-    student_id = cursor.lastrowid
-
-    # Insert subject relations
-    for sub_id in subjects:
+    try:
         cursor.execute(
-            "INSERT INTO student_subjects (student_id, subject_id) VALUES (%s, %s)",
-            (student_id, sub_id)
+            "INSERT INTO students (name, reg_number, department, year) VALUES (%s, %s, %s, %s)",
+            (name, number, dept, year)
         )
 
-    db.commit()
-    
-    cursor.close()
-    db.close()
+        student_id = cursor.lastrowid
 
-    return jsonify({"message": "Student registered successfully"})
+        for sub_id in subjects:
+            cursor.execute(
+                "INSERT INTO student_subjects (student_id, subject_id) VALUES (%s, %s)",
+                (student_id, int(sub_id))
+            )
+
+        db.commit()
+        return jsonify({"message": "Student registered successfully"}), 201
+    except mysql.connector.IntegrityError as error:
+        db.rollback()
+        if error.errno == 1062:
+            return jsonify({"message": f"A student with register number {number} is already registered."}), 409
+        return jsonify({"message": "Could not register student because of a database constraint."}), 400
+    except mysql.connector.Error:
+        db.rollback()
+        return jsonify({"message": "Could not register student because of a database error."}), 500
+    finally:
+        cursor.close()
+        db.close()
+
 
 
 @app.route('/get_students_by_subject/<int:subject_id>', methods=['GET'])

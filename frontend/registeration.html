@@ -340,7 +340,11 @@
 
             const data = await response.json();
 
-            alert(data.message);
+            alert(data.message || data.error || 'Registration failed.');
+
+            if (!response.ok) {
+                return;
+            }
 
             window.location.href = "page1.html";
         }
