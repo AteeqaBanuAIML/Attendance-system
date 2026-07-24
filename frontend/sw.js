@@ -2,7 +2,7 @@
 // ⚠️  IMPORTANT: Change this version string on EVERY redeploy.
 // The browser detects any byte-change in sw.js and installs the new worker.
 // You can just increment the number, e.g. v3 → v4 → v5, each time you deploy.
-const CACHE_VERSION = "attendance-v20260723-1048";
+const CACHE_VERSION = "attendance-v20260723-1049";
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE_URLS = [

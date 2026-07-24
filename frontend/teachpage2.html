@@ -81,6 +81,7 @@
             color: #666;
             font-size: 14px;
             margin-bottom: 15px;
+            font-weight: 500;
         }
 
         .strength-box {
@@ -98,13 +99,27 @@
             margin-bottom: 20px;
         }
 
+        .cards-loading {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 4px;
+            color: #666;
+            font-size: 15px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
         .student-card {
             position: absolute;
             width: 100%;
             height: 100%;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
             padding: 40px 20px;
             display: flex;
             flex-direction: column;
@@ -119,7 +134,7 @@
 
         .student-card.active {
             z-index: 10;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
         }
 
         .student-card.swiped-right {
@@ -183,21 +198,23 @@
         .student-name {
             color: #666;
             font-size: 16px;
-            font-weight: 400;
-            margin-bottom: 8px;
+            font-weight: 600;
+            margin-bottom: 20px;
         }
 
         .student-register {
             color: #333;
             font-size: 20px;
             font-weight: 700;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
         .swipe-hint {
             font-size: 12px;
             color: #999;
             margin-bottom: 20px;
+            font-weight: 500;
+
         }
 
         .swipe-buttons {
@@ -540,6 +557,9 @@
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
+            font-family: inherit;
+            padding: 0;
+            appearance: none;
             transition: all 0.2s ease;
         }
 
@@ -552,7 +572,7 @@
         .calendar-day.no-class {
             background: #f8f9fa;
             color: #999;
-            cursor: default;
+            cursor: pointer;
         }
 
         .calendar-legend {
@@ -1025,7 +1045,7 @@
                     <div class="subject-name" id="subjectName">Subject Name</div>
                     <div class="subject-type" id="subjectType">Type: Lab</div>
                     <input type="hidden" id="attendanceDate" value="">
-                    <div id="selectedDateDisplay" style="margin-top: 10px; font-size: 14px; font-weight: 600; color: #667eea;">Select a date</div>
+                    <div id="selectedDateDisplay" style="margin-top: 10px; margin-bottom: 10px; font-size: 14px; font-weight: 600; color: #667eea;">Select a date</div>
                 </div>
                 <button class="calendar-btn-header" onclick="openClassCalendar()">📅 Select Date</button>
             </div>
@@ -1138,8 +1158,14 @@
             document.getElementById('subjectType').textContent = 'Type: ' + selectedClassType;
         }
 
+        function showCardsLoading() {
+            document.getElementById('cardsContainer').innerHTML =
+                '<div class="cards-loading">Loading students...</div>';
+        }
+
         async function loadStudents() {
             const cacheKey = `studentsBySubjectCache_${subjectId}`;
+            showCardsLoading();
             const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
 
             const applyStudents = (data) => {
@@ -1170,6 +1196,8 @@
                 console.error('loadStudents error:', error);
                 if (!Array.isArray(cached)) {
                     document.getElementById('totalStudents').textContent = 'Error';
+                    document.getElementById('cardsContainer').innerHTML =
+                        '<div class="cards-loading">Unable to load students.</div>';
                 } else {
                     document.getElementById('attendanceDate').value = today;
                     document.getElementById('selectedDateDisplay').textContent = 'Date: ' + today;
@@ -1188,6 +1216,78 @@
                 console.error('loadClassDates error:', error);
             }
         }
+
+        function openClassCalendar() {
+            currentClassMonth = new Date();
+            renderClassCalendar();
+            document.getElementById('classCalendarModal').classList.add('show');
+        }
+
+        function closeClassCalendar() {
+            document.getElementById('classCalendarModal').classList.remove('show');
+        }
+
+        function prevClassMonth() {
+            currentClassMonth.setMonth(currentClassMonth.getMonth() - 1);
+            renderClassCalendar();
+        }
+
+        function nextClassMonth() {
+            currentClassMonth.setMonth(currentClassMonth.getMonth() + 1);
+            renderClassCalendar();
+        }
+
+        function renderClassCalendar() {
+            const year = currentClassMonth.getFullYear();
+            const month = currentClassMonth.getMonth();
+            document.getElementById('currentClassMonth').textContent =
+                currentClassMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            const grid = document.getElementById('classCalendarGrid');
+            grid.innerHTML = '';
+
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-day-header';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+
+            for (let index = 0; index < firstDay; index++) {
+                const empty = document.createElement('div');
+                empty.className = 'calendar-day no-class';
+                grid.appendChild(empty);
+            }
+
+            for (let date = 1; date <= lastDate; date++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                const conducted = classDatesSet.has(dateStr);
+                const dayElement = document.createElement('button');
+                dayElement.type = 'button';
+                dayElement.className = `calendar-day ${conducted ? 'conducted' : 'no-class'}`;
+                dayElement.textContent = conducted ? `${date} ✓` : date;
+                dayElement.title = conducted ? 'Class conducted' : 'Select date';
+                dayElement.addEventListener('click', () => selectAttendanceDate(dateStr));
+                grid.appendChild(dayElement);
+            }
+        }
+
+        async function selectAttendanceDate(date) {
+            document.getElementById('attendanceDate').value = date;
+            document.getElementById('selectedDateDisplay').textContent = 'Date: ' + date;
+            closeClassCalendar();
+            await loadAttendanceForDate();
+        }
+
+        window.addEventListener('click', event => {
+            const modal = document.getElementById('classCalendarModal');
+            if (event.target === modal) {
+                closeClassCalendar();
+            }
+        });
 
         function displayCards() {
             const container = document.getElementById('cardsContainer');
@@ -1379,6 +1479,7 @@
 
                 if (submitRes.ok) {
                     classDatesSet.add(date);
+                    renderClassCalendar();
                     document.getElementById('submitBtn').style.display = 'none';
                     document.getElementById('completedMessage').classList.add('show');
                 } else {
